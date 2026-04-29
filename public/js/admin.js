@@ -996,7 +996,9 @@ async function loadCajaSection() {
   document.getElementById('caja-total-directo').textContent = formatCOP(tDir);
 
   const base = parseFloat(currentCaja.base_caja) || 0;
-  const esperado = base + efeAdmin + efeMensajero + totalBasesMensajeros;
+  // esperado = base caja + efectivo cobrado (oficina + mensajeros)
+  // La base del mensajero sale de la caja y regresa con él; no se suma aquí.
+  const esperado = base + efeAdmin + efeMensajero;
   document.getElementById('caja-esperado').textContent = formatCOP(esperado);
 
   // Pre-fill expected in inputs
@@ -1264,10 +1266,10 @@ async function cerrarRuta(domiciliarioId, domNombre) {
     .eq('domiciliario_id', domiciliarioId)
     .eq('fecha', today);
 
-  // 5. Resetear guías a en_oficina
+  // 5. Eliminar guías no entregadas
   if (guiaIds.length) {
     await supabase.from('guias')
-      .update({ status: 'en_oficina', domiciliario_id: null })
+      .delete()
       .in('id', guiaIds)
       .eq('entregado', false);
   }
