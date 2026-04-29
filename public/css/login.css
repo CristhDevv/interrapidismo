@@ -1,0 +1,203 @@
+/* ============================================================
+   login.css — Página de selección de rol
+   Estilo Premium para Interrapidísimo Villa Rica
+   ============================================================ */
+
+:root {
+  --white:    #FFFFFF;
+  --gray-50:  #F5F5F5;
+  --gray-100: #EFEFEF;
+  --gray-200: #E0E0E0;
+  --gray-400: #9E9E9E;
+  --gray-600: #616161;
+  --dark:     #1A1A1A;
+  --accent:   #FF6B00;
+  --accent-lt:#FF8C36;
+  --accent-bg:#FFF4EC;
+  --radius:    20px;
+  --shadow:    0 10px 40px rgba(0,0,0,.08);
+  --shadow-hv: 0 20px 60px rgba(0,0,0,.12);
+  --transition: all .3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--white);
+  color: var(--dark);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  overflow-x: hidden;
+}
+
+/* Background elements for premium feel */
+body::before {
+  content: '';
+  position: absolute;
+  top: -10%;
+  right: -5%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, var(--accent-bg) 0%, transparent 70%);
+  z-index: -1;
+  filter: blur(60px);
+}
+
+.login-container {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3rem;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.brand-section {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo-icon {
+  width: 64px;
+  height: 64px;
+  background: var(--accent);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  box-shadow: 0 8px 24px rgba(255,107,0,0.3);
+  margin-bottom: 0.5rem;
+}
+
+.brand-name {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.brand-name strong {
+  color: var(--accent);
+}
+
+.role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  width: 100%;
+}
+
+.role-card {
+  background: var(--white);
+  border: 2px solid var(--gray-100);
+  border-radius: var(--radius);
+  padding: 2.5rem 2rem;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.5rem;
+  transition: var(--transition);
+  position: relative;
+  box-shadow: var(--shadow);
+}
+
+.role-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-hv);
+}
+
+.role-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 4px;
+  background: var(--accent);
+  border-radius: 4px 4px 0 0;
+  transition: var(--transition);
+}
+
+.role-card:hover::after {
+  width: 40%;
+}
+
+.role-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  background: var(--gray-50);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  transition: var(--transition);
+}
+
+.role-card:hover .role-icon-wrapper {
+  background: var(--accent-bg);
+  transform: scale(1.1);
+}
+
+.role-info h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  transition: var(--transition);
+}
+
+.role-card:hover h2 {
+  color: var(--accent);
+}
+
+.role-info p {
+  font-size: 0.95rem;
+  color: var(--gray-600);
+  line-height: 1.5;
+}
+
+.back-link {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gray-400);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition);
+}
+
+.back-link:hover {
+  color: var(--accent);
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+  .role-grid {
+    grid-template-columns: 1fr;
+  }
+  .login-container {
+    gap: 2rem;
+  }
+  .role-card {
+    padding: 2rem;
+  }
+}

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interrapidísimo Villa Rica — Envíos y Mensajería</title>
+  <meta name="description" content="Servicio de mensajería, envíos, corresponsal bancario Nequi, venta de productos y copias en Villa Rica, Cauca. Consulta el estado de tu guía.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/landing.css">
+</head>
+<body>
+
+  <!-- ══════════════ NAV ══════════════ -->
+  <nav class="nav" id="top-nav">
+    <div class="nav-inner">
+      <div class="nav-brand">
+        <div class="nav-logo">📦</div>
+        <span>Interrapidísimo <strong>Villa Rica</strong></span>
+      </div>
+      <a href="login.html" class="nav-login-btn">🔐 Acceso personal</a>
+    </div>
+  </nav>
+
+  <!-- ══════════════ HERO ══════════════ -->
+  <section class="hero" id="inicio">
+    <div class="hero-content">
+      <div class="hero-badge">📍 Villa Rica, Cauca</div>
+      <h1 class="hero-title">Envíos rápidos y<br><span class="accent">confiables</span> para ti</h1>
+      <p class="hero-sub">Mensajería, corresponsal bancario y más. Todo en un solo lugar.</p>
+
+      <!-- Buscador -->
+      <div class="search-box" id="rastreo">
+        <label class="search-label">Rastrear mi envío</label>
+        <div class="search-row">
+          <input
+            type="text"
+            id="guide-search"
+            class="search-input"
+            placeholder="Ingresa el número de guía…"
+            maxlength="30"
+            autocomplete="off"
+            onkeydown="if(event.key==='Enter') searchGuide()"
+          >
+          <button id="search-btn" class="search-btn" onclick="searchGuide()">
+            <span class="btn-icon">🔍</span> Buscar
+          </button>
+        </div>
+        <div id="result-box"></div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-blob"></div>
+      <div class="floating-card fc1">
+        <span>📦</span> Entregado
+      </div>
+      <div class="floating-card fc2">
+        <span>🛵</span> En ruta
+      </div>
+      <div class="floating-card fc3">
+        <span>✅</span> Confirmado
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ SERVICIOS ══════════════ -->
+  <section class="section" id="servicios">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Servicios</span>
+        <h2 class="section-title">Todo lo que ofrecemos</h2>
+        <p class="section-sub">Tu punto de confianza en Villa Rica para envíos y más</p>
+      </div>
+      <div class="services-grid">
+        <div class="service-card">
+          <div class="service-icon">🚚</div>
+          <h3>Envíos y Mensajería</h3>
+          <p>Enviamos y recibimos paquetes a nivel nacional con Inter Rapidísimo. Rápido, seguro y confiable.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">🏦</div>
+          <h3>Corresponsal Bancario</h3>
+          <p>Realiza tus transacciones Nequi directamente desde nuestra agencia. Sin filas, sin desplazamientos.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">🛍️</div>
+          <h3>Venta de Productos</h3>
+          <p>Encuentra cremas, lociones y desodorantes de revista a los mejores precios. Marcas reconocidas.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">🖨️</div>
+          <h3>Copias e Impresiones</h3>
+          <p>Impresiones, fotocopias, documentos y cartas. Servicio rápido y económico para todos tus trámites.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ PRODUCTOS ══════════════ -->
+  <section class="section" id="productos" style="background:#fff;">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Catálogo</span>
+        <h2 class="section-title">Nuestros Productos</h2>
+        <p class="section-sub">Cremas, lociones y desodorantes de revista a los mejores precios</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.2rem;margin-bottom:2.5rem;">
+        <div class="service-card" style="text-align:center;padding:1.8rem 1.2rem;">
+          <div class="service-icon">🧴</div>
+          <h3>Cremas</h3>
+          <p>Cremas hidratantes y de tratamiento para todo tipo de piel.</p>
+        </div>
+        <div class="service-card" style="text-align:center;padding:1.8rem 1.2rem;">
+          <div class="service-icon">💧</div>
+          <h3>Lociones</h3>
+          <p>Fragancias y lociones corporales de marcas reconocidas.</p>
+        </div>
+        <div class="service-card" style="text-align:center;padding:1.8rem 1.2rem;">
+          <div class="service-icon">✨</div>
+          <h3>Desodorantes</h3>
+          <p>Protección duradera con los mejores desodorantes del mercado.</p>
+        </div>
+        <div class="service-card" style="text-align:center;padding:1.8rem 1.2rem;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#FF6B00,#ff8533);"></div>
+          <div class="service-icon">📦</div>
+          <h3>Y más...</h3>
+          <p>Encuentra todo lo que necesitas en un solo lugar.</p>
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <a href="productos.html" style="
+          display:inline-flex;align-items:center;gap:.6rem;
+          padding:.85rem 2.2rem;
+          background:linear-gradient(135deg,#FF6B00,#e65c00);
+          color:#fff;border-radius:10px;font-weight:700;font-size:1rem;
+          text-decoration:none;
+          box-shadow:0 4px 20px rgba(255,107,0,.35);
+          transition:all .2s ease;
+        " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 28px rgba(255,107,0,.45)'"
+           onmouseout="this.style.transform='';this.style.boxShadow='0 4px 20px rgba(255,107,0,.35)'">
+          🛍️ Ver catálogo completo →
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ HORARIOS ══════════════ -->
+  <section class="section section-alt" id="horarios">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Horarios</span>
+        <h2 class="section-title">Atención al cliente</h2>
+        <p class="section-sub">Estamos disponibles para servirte en los siguientes horarios</p>
+      </div>
+      <div class="horario-grid">
+        <div class="horario-card">
+          <div class="horario-icon">🌅</div>
+          <div class="horario-info">
+            <div class="horario-dia">Lunes a Sábado</div>
+            <div class="horario-horas">
+              <span class="hora-bloque">8:00 am – 1:00 pm</span>
+              <span class="hora-sep">·</span>
+              <span class="hora-bloque">2:00 pm – 6:00 pm</span>
+            </div>
+          </div>
+          <div class="horario-badge abierto">Atendemos</div>
+        </div>
+        <div class="horario-card cerrado">
+          <div class="horario-icon">🌙</div>
+          <div class="horario-info">
+            <div class="horario-dia">Domingos y Festivos</div>
+            <div class="horario-horas">
+              <span class="hora-bloque">Sin atención</span>
+            </div>
+          </div>
+          <div class="horario-badge cerrado-badge">Cerrado</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ POLÍTICAS ══════════════ -->
+  <section class="section" id="politicas">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Políticas</span>
+        <h2 class="section-title">Información importante</h2>
+        <p class="section-sub">Conoce nuestras políticas para un servicio transparente y seguro</p>
+      </div>
+      <div class="politicas-grid">
+
+        <div class="politica-card">
+          <div class="politica-header">
+            <div class="politica-icon">🗓️</div>
+            <h3>Política de Envíos</h3>
+          </div>
+          <ul class="politica-list">
+            <li>
+              <span class="poli-bullet">🛵</span>
+              <div><strong>Domicilio:</strong> Tienes <strong>3 días hábiles</strong> desde la notificación para recibir tu paquete.</div>
+            </li>
+            <li>
+              <span class="poli-bullet">🏢</span>
+              <div><strong>Retiro en oficina:</strong> Tienes <strong>7 días hábiles</strong> desde la notificación para retirarlo.</div>
+            </li>
+            <li>
+              <span class="poli-bullet">⚠️</span>
+              <div>Pasados estos plazos, el paquete puede ser devuelto al remitente con costos adicionales.</div>
+            </li>
+          </ul>
+          <div class="politica-disclaimer">
+            ℹ️ Esta agencia <strong>no tiene vinculación</strong> con páginas de ventas online. Somos únicamente un servicio de transporte y mensajería.
+          </div>
+        </div>
+
+        <div class="politica-card">
+          <div class="politica-header">
+            <div class="politica-icon">📦</div>
+            <h3>Política de Paquetes</h3>
+          </div>
+          <ul class="politica-list">
+            <li>
+              <span class="poli-bullet">🔒</span>
+              <div>Ningún paquete puede ser <strong>destapado antes de cancelar</strong> el valor del envío.</div>
+            </li>
+            <li>
+              <span class="poli-bullet">📝</span>
+              <div>La única excepción es si el <strong>remitente indica en observaciones</strong> que el destinatario puede verificar el contenido antes de pagar.</div>
+            </li>
+            <li>
+              <span class="poli-bullet">✅</span>
+              <div>Una vez entregado y pagado, cualquier reclamación sobre el contenido es responsabilidad del remitente o proveedor.</div>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ CONSEJOS ANTI-ESTAFA ══════════════ -->
+  <section class="section section-alt" id="consejos">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Seguridad</span>
+        <h2 class="section-title">No te dejes estafar</h2>
+        <p class="section-sub">Consejos para comprar seguro por internet y recibir tus paquetes sin problemas</p>
+      </div>
+      <div class="consejos-grid">
+        <div class="consejo-card">
+          <div class="consejo-num">01</div>
+          <div class="consejo-body">
+            <h4>Pide permiso de verificación al proveedor</h4>
+            <p>Al hacer tu compra, solicita al vendedor que en las <strong>observaciones del envío</strong> indique que puedes destapar y verificar el paquete antes de pagar. Así tienes el respaldo para revisarlo.</p>
+          </div>
+        </div>
+        <div class="consejo-card">
+          <div class="consejo-num">02</div>
+          <div class="consejo-body">
+            <h4>Verifica la reputación de la tienda online</h4>
+            <p>Antes de comprar, revisa reseñas y comentarios de otros compradores. Desconfía de precios muy bajos, páginas sin historial o vendedores que no te dan información de contacto clara.</p>
+          </div>
+        </div>
+        <div class="consejo-card">
+          <div class="consejo-num">03</div>
+          <div class="consejo-body">
+            <h4>Confirma el número de guía</h4>
+            <p>Exige siempre al vendedor el <strong>número de guía de Inter Rapidísimo</strong> después de realizar la compra. Puedes rastrearlo en esta misma página para confirmar que existe.</p>
+          </div>
+        </div>
+        <div class="consejo-card">
+          <div class="consejo-num">04</div>
+          <div class="consejo-body">
+            <h4>No pagues sin recibir</h4>
+            <p>Si el paquete no llega en el plazo acordado o el número de guía no aparece en el sistema, <strong>no realices ningún pago adicional</strong> y contacta directamente a nuestra agencia.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════ MAPA ══════════════ -->
+  <section id="ubicacion" style="padding: 60px 20px; background: #F5F5F5;">
+    <div style="max-width: 900px; margin: 0 auto; text-align: center;">
+      <h2 style="font-family: 'Inter', sans-serif; font-size: 1.8rem; color: #1A1A1A; margin-bottom: 8px;">
+        📍 ¿Dónde estamos?
+      </h2>
+      <p style="font-family: 'Inter', sans-serif; color: #666; margin-bottom: 32px; font-size: 1rem;">
+        Visítanos en <strong>Villa Rica, Cauca</strong> · Lunes a Sábado 8:00am – 6:00pm
+      </p>
+      <iframe
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3982.4!2d-76.4673551!3d3.1782581!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zM8KwMTAnNDIuNyJOIDc2wrAyOCcwMi41Ilc!5e0!3m2!1ses!2sco!4v1"
+        width="100%"
+        height="380"
+        style="border:0; border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,0.10);"
+        allowfullscreen=""
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade">
+      </iframe>
+      <p style="font-family: 'Inter', sans-serif; color: #888; font-size: 0.9rem;">
+        Interrapidísimo Villa Rica · Villa Rica, Cauca, Colombia
+      </p>
+    </div>
+  </section>
+
+  <!-- ══════════════ FOOTER ══════════════ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div class="footer-logo">📦</div>
+          <div>
+            <div class="footer-name">Interrapidísimo Villa Rica</div>
+            <div class="footer-loc">Villa Rica, Cauca · Colombia</div>
+          </div>
+        </div>
+        <div class="footer-links">
+          <a href="#servicios">Servicios</a>
+          <a href="#horarios">Horarios</a>
+          <a href="#politicas">Políticas</a>
+          <a href="#consejos">Consejos</a>
+          <a href="productos.html">Productos</a>
+        </div>
+        <div class="footer-access">
+          <a href="login.html" class="footer-login">🔐 Acceso personal</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2025 Interrapidísimo Villa Rica. Todos los derechos reservados.</span>
+        <span>Esta agencia no tiene vinculación con plataformas de venta online.</span>
+      </div>
+    </div>
+  </footer>
+
+  <div id="toast-container"></div>
+  <script src="js/main.js"></script>
+
+  <script>
+    // Efecto nav scroll
+    window.addEventListener('scroll', () => {
+      document.getElementById('top-nav').classList.toggle('nav-scrolled', window.scrollY > 40);
+    });
+  </script>
+</body>
+</html>

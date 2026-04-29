@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nuestros Productos — Interrapidísimo Villa Rica</title>
+  <meta name="description" content="Catálogo de productos disponibles en Interrapidísimo Villa Rica: cremas, lociones, desodorantes y más a los mejores precios.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/landing.css">
+  <style>
+    /* ── Productos Page Specific ── */
+    .prod-hero {
+      background: linear-gradient(135deg, #fff 55%, #fff5ee 100%);
+      padding: 7rem 1.5rem 4rem;
+      text-align: center;
+      border-bottom: 1px solid #ffe5cc;
+      position: relative;
+      overflow: hidden;
+    }
+    .prod-hero::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 360px; height: 360px;
+      background: radial-gradient(circle, rgba(255,107,0,.08) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .prod-hero-badge {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: rgba(255,107,0,.1); color: #FF6B00;
+      border: 1px solid rgba(255,107,0,.25);
+      padding: .35rem .9rem; border-radius: 20px;
+      font-size: .78rem; font-weight: 700; letter-spacing: .04em;
+      text-transform: uppercase; margin-bottom: 1.2rem;
+    }
+    .prod-hero-title {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800; color: #1a1a1a; line-height: 1.15;
+      margin-bottom: 1rem;
+    }
+    .prod-hero-title .accent { color: #FF6B00; }
+    .prod-hero-sub {
+      font-size: 1.05rem; color: #6b7280; max-width: 500px;
+      margin: 0 auto 2rem; line-height: 1.6;
+    }
+    .prod-back-btn {
+      display: inline-flex; align-items: center; gap: .5rem;
+      padding: .55rem 1.2rem;
+      background: #fff; border: 1px solid #e5e7eb;
+      border-radius: 8px; font-size: .88rem; font-weight: 600;
+      color: #1a1a1a; text-decoration: none;
+      transition: all .2s ease; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .prod-back-btn:hover {
+      border-color: #FF6B00; color: #FF6B00;
+      box-shadow: 0 4px 16px rgba(255,107,0,.15);
+      transform: translateY(-1px);
+    }
+
+    /* ── Filters ── */
+    .filters-section {
+      padding: 2rem 1.5rem;
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,.04);
+    }
+    .filters-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+    }
+    .filter-label {
+      font-size: .78rem; font-weight: 700; color: #6b7280;
+      text-transform: uppercase; letter-spacing: .05em;
+      margin-right: .25rem; white-space: nowrap;
+    }
+    .filter-pills {
+      display: flex; gap: .5rem; flex-wrap: wrap;
+    }
+    .filter-pill {
+      padding: .4rem 1rem;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 20px;
+      font-size: .82rem; font-weight: 600;
+      color: #6b7280; background: #fff;
+      cursor: pointer;
+      transition: all .18s ease;
+      white-space: nowrap;
+    }
+    .filter-pill:hover {
+      border-color: #FF6B00; color: #FF6B00;
+      background: rgba(255,107,0,.06);
+    }
+    .filter-pill.active {
+      background: #FF6B00; color: #fff;
+      border-color: #FF6B00;
+      box-shadow: 0 3px 12px rgba(255,107,0,.3);
+    }
+
+    /* ── Products Grid ── */
+    .products-section {
+      padding: 3rem 1.5rem 5rem;
+      background: #f5f5f5; min-height: 400px;
+    }
+    .products-inner { max-width: 1100px; margin: 0 auto; }
+    .products-count {
+      font-size: .85rem; color: #6b7280;
+      margin-bottom: 1.5rem; font-weight: 500;
+    }
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+    .product-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      overflow: hidden;
+      transition: transform .22s ease, box-shadow .22s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+    .product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 32px rgba(0,0,0,.1);
+    }
+    .product-img-wrap {
+      position: relative;
+      height: 200px;
+      background: linear-gradient(135deg, #f8f8f8, #f0f0f0);
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .product-img-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transition: transform .35s ease;
+    }
+    .product-card:hover .product-img-wrap img {
+      transform: scale(1.05);
+    }
+    .product-img-placeholder {
+      font-size: 3.5rem;
+      opacity: .25;
+    }
+    .product-category-badge {
+      position: absolute; top: .75rem; left: .75rem;
+      background: rgba(255,107,0,.9); color: #fff;
+      padding: .2rem .65rem; border-radius: 20px;
+      font-size: .7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .product-info {
+      padding: 1.2rem 1.3rem 1.4rem;
+    }
+    .product-name {
+      font-size: 1rem; font-weight: 700; color: #1a1a1a;
+      margin-bottom: .4rem; line-height: 1.3;
+    }
+    .product-desc {
+      font-size: .82rem; color: #6b7280; line-height: 1.5;
+      margin-bottom: 1rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .product-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: .9rem; border-top: 1px solid #f0f0f0;
+    }
+    .product-price {
+      font-size: 1.3rem; font-weight: 800;
+      color: #FF6B00; line-height: 1;
+    }
+    .product-price-label {
+      font-size: .7rem; color: #9ca3af; font-weight: 500; margin-top: .1rem;
+    }
+    .product-cta {
+      display: inline-flex; align-items: center; gap: .35rem;
+      padding: .4rem .9rem;
+      background: linear-gradient(135deg, #FF6B00, #e65c00);
+      color: #fff; border-radius: 8px;
+      font-size: .78rem; font-weight: 700;
+      transition: all .18s ease;
+      box-shadow: 0 3px 10px rgba(255,107,0,.3);
+    }
+    .product-cta:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 16px rgba(255,107,0,.45);
+    }
+
+    /* ── States ── */
+    .products-loading, .products-empty {
+      text-align: center; padding: 4rem 1rem;
+      color: #9ca3af;
+    }
+    .products-loading .spinner-ring {
+      width: 44px; height: 44px;
+      border: 4px solid #e5e7eb;
+      border-top-color: #FF6B00;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    .products-loading p, .products-empty p {
+      font-size: .95rem; font-weight: 500;
+    }
+    .products-empty .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: .35; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── WhatsApp CTA ── */
+    .whatsapp-cta {
+      background: linear-gradient(135deg, #FF6B00 0%, #ff8533 100%);
+      padding: 3rem 1.5rem;
+      text-align: center; color: #fff;
+    }
+    .whatsapp-cta h2 {
+      font-size: 1.7rem; font-weight: 800; margin-bottom: .6rem;
+    }
+    .whatsapp-cta p {
+      opacity: .9; margin-bottom: 1.5rem; font-size: .98rem;
+    }
+    .whatsapp-btn {
+      display: inline-flex; align-items: center; gap: .6rem;
+      padding: .8rem 1.8rem;
+      background: #fff; color: #FF6B00;
+      border-radius: 10px; font-weight: 800; font-size: 1rem;
+      text-decoration: none;
+      transition: all .2s ease;
+      box-shadow: 0 4px 20px rgba(0,0,0,.15);
+    }
+    .whatsapp-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.2); }
+
+    /* Nav override for white bg */
+    .nav { background: #fff !important; border-bottom: 1px solid #ffe5cc !important; }
+    .nav-scrolled { box-shadow: 0 4px 20px rgba(0,0,0,.07) !important; }
+
+    @media (max-width: 640px) {
+      .prod-hero { padding: 6rem 1rem 3rem; }
+      .products-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav" id="top-nav" style="background:#fff;">
+    <div class="nav-inner">
+      <div class="nav-brand">
+        <div class="nav-logo">📦</div>
+        <span>Interrapidísimo <strong>Villa Rica</strong></span>
+      </div>
+      <a href="index.html" class="nav-login-btn" style="background:rgba(255,107,0,.1);color:#FF6B00;border:1px solid rgba(255,107,0,.25);">← Volver al inicio</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="prod-hero">
+    <div class="prod-hero-badge">🛍️ Catálogo</div>
+    <h1 class="prod-hero-title">Nuestros <span class="accent">Productos</span></h1>
+    <p class="prod-hero-sub">Cremas, lociones, desodorantes y más. Marcas reconocidas a los mejores precios. ¡Disponibles en nuestra agencia!</p>
+    <a href="index.html" class="prod-back-btn">← Volver a la página principal</a>
+  </section>
+
+  <!-- FILTERS -->
+  <div class="filters-section" id="filters-section">
+    <div class="filters-inner">
+      <span class="filter-label">Filtrar:</span>
+      <div class="filter-pills" id="filter-pills">
+        <button class="filter-pill active" data-cat="todos" onclick="setFilter('todos')">Todos</button>
+        <button class="filter-pill" data-cat="cremas" onclick="setFilter('cremas')">🧴 Cremas</button>
+        <button class="filter-pill" data-cat="lociones" onclick="setFilter('lociones')">💧 Lociones</button>
+        <button class="filter-pill" data-cat="desodorantes" onclick="setFilter('desodorantes')">✨ Desodorantes</button>
+        <button class="filter-pill" data-cat="otros" onclick="setFilter('otros')">📦 Otros</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCTS -->
+  <section class="products-section">
+    <div class="products-inner">
+      <div class="products-count" id="products-count"></div>
+      <div id="products-grid">
+        <div class="products-loading">
+          <div class="spinner-ring"></div>
+          <p>Cargando productos…</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WhatsApp CTA -->
+  <section class="whatsapp-cta">
+    <h2>¿Quieres hacer un pedido?</h2>
+    <p>Contáctanos por WhatsApp y te atendemos de inmediato.</p>
+    <a href="https://wa.me/573000000000" target="_blank" class="whatsapp-btn">
+      💬 Escribir por WhatsApp
+    </a>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div class="footer-logo">📦</div>
+          <div>
+            <div class="footer-name">Interrapidísimo Villa Rica</div>
+            <div class="footer-loc">Villa Rica, Cauca · Colombia</div>
+          </div>
+        </div>
+        <div class="footer-links">
+          <a href="index.html#servicios">Servicios</a>
+          <a href="index.html#horarios">Horarios</a>
+          <a href="index.html#politicas">Políticas</a>
+          <a href="productos.html">Productos</a>
+        </div>
+        <div class="footer-access">
+          <a href="login.html" class="footer-login">🔐 Acceso personal</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2025 Interrapidísimo Villa Rica. Todos los derechos reservados.</span>
+      </div>
+    </div>
+  </footer>
+
+  <div id="toast-container"></div>
+
+  <script>
+    // ── Supabase ──
+    const SUPABASE_URL = 'https://cnmxpvryfksixytbnvnq.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNubXhwdnJ5ZmtzaXh5dGJudm5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczODQ0MTIsImV4cCI6MjA5Mjk2MDQxMn0.seOjEZucLUlOA2pOFfPtbozJMh_r-0hU-qffeWnN0X4';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let allProducts = [];
+    let activeFilter = 'todos';
+
+    const CATEGORY_LABELS = {
+      cremas: '🧴 Cremas',
+      lociones: '💧 Lociones',
+      desodorantes: '✨ Desodorantes',
+      otros: '📦 Otros',
+      general: '📦 General'
+    };
+
+    // ── Nav scroll ──
+    window.addEventListener('scroll', () => {
+      document.getElementById('top-nav').classList.toggle('nav-scrolled', window.scrollY > 40);
+    });
+
+    // ── Load products ──
+    async function loadProducts() {
+      const { data, error } = await sb
+        .from('productos')
+        .select('*')
+        .eq('activo', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        renderError();
+        return;
+      }
+      allProducts = data || [];
+      renderProducts();
+    }
+
+    function setFilter(cat) {
+      activeFilter = cat;
+      document.querySelectorAll('.filter-pill').forEach(pill => {
+        pill.classList.toggle('active', pill.dataset.cat === cat);
+      });
+      renderProducts();
+    }
+    window.setFilter = setFilter;
+
+    function renderProducts() {
+      const filtered = activeFilter === 'todos'
+        ? allProducts
+        : allProducts.filter(p => (p.categoria || 'general').toLowerCase() === activeFilter);
+
+      const countEl = document.getElementById('products-count');
+      const gridEl  = document.getElementById('products-grid');
+
+      countEl.textContent = filtered.length > 0
+        ? `${filtered.length} producto${filtered.length !== 1 ? 's' : ''} encontrado${filtered.length !== 1 ? 's' : ''}`
+        : '';
+
+      if (!filtered.length) {
+        gridEl.innerHTML = `
+          <div class="products-empty">
+            <div class="empty-icon">🛍️</div>
+            <p>No hay productos en esta categoría aún.</p>
+          </div>`;
+        return;
+      }
+
+      gridEl.innerHTML = `<div class="products-grid">${filtered.map(productCard).join('')}</div>`;
+    }
+
+    function productCard(p) {
+      const price = p.precio > 0
+        ? `<div><div class="product-price">${formatCOP(p.precio)}</div><div class="product-price-label">Precio unitario</div></div>`
+        : `<div><div class="product-price" style="font-size:1rem;color:#9ca3af">Consultar precio</div></div>`;
+
+      const imgHtml = p.imagen_url
+        ? `<img src="${escHtml(p.imagen_url)}" alt="${escHtml(p.nombre)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'product-img-placeholder\\'>🛍️</div>'">`
+        : `<div class="product-img-placeholder">🛍️</div>`;
+
+      const cat = (p.categoria || 'general').toLowerCase();
+      const catLabel = CATEGORY_LABELS[cat] || cat;
+
+      return `
+        <div class="product-card">
+          <div class="product-img-wrap">
+            ${imgHtml}
+            <span class="product-category-badge">${catLabel}</span>
+          </div>
+          <div class="product-info">
+            <div class="product-name">${escHtml(p.nombre)}</div>
+            ${p.descripcion ? `<div class="product-desc">${escHtml(p.descripcion)}</div>` : ''}
+            <div class="product-footer">
+              ${price}
+              <a href="https://wa.me/573000000000?text=${encodeURIComponent('Hola, me interesa el producto: ' + p.nombre)}" target="_blank" class="product-cta">
+                💬 Pedir
+              </a>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderError() {
+      document.getElementById('products-grid').innerHTML = `
+        <div class="products-empty">
+          <div class="empty-icon">⚠️</div>
+          <p>No se pudieron cargar los productos. Intenta recargar la página.</p>
+        </div>`;
+    }
+
+    function formatCOP(v) {
+      return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(v);
+    }
+
+    function escHtml(str) {
+      const d = document.createElement('div');
+      d.appendChild(document.createTextNode(str || ''));
+      return d.innerHTML;
+    }
+
+    // ── Init ──
+    loadProducts();
+
+    // ── Realtime ──
+    sb.channel('public:productos')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'productos' }, () => loadProducts())
+      .subscribe();
+  </script>
+</body>
+</html>

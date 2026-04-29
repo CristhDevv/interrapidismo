@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interrapidísimo — Panel Administrador</title>
+  <meta name="robots" content="noindex">
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Bibliotecas de Exportación -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <!-- Estilos -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     LOGIN OVERLAY
+════════════════════════════════════════════════════════════ -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-icon">📦</div>
+      <span>Interrapidísimo</span>
+    </div>
+    <p class="login-subtitle">Panel de Administración</p>
+    <div class="form-group">
+      <label for="login-user">Email</label>
+      <input type="email" id="login-user" placeholder="admin@interrapidisimo.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label for="login-pass">Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <div id="login-error" class="text-sm" style="color:var(--danger);margin-bottom:.8rem;display:none"></div>
+    <button class="btn btn-primary btn-block btn-lg" onclick="doLogin()" id="login-btn">
+      Iniciar sesión
+    </button>
+    <div class="text-center mt-2">
+      <a href="/" class="text-sm text-muted" style="text-decoration:underline">← Volver al sitio público</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     APP SHELL
+════════════════════════════════════════════════════════════ -->
+<div class="app-shell hidden" id="app-shell">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="brand-icon">📦</div>
+      <div>
+        <div class="brand-name">Interrapidísimo</div>
+        <div class="brand-sub">Villa Rica · Panel Admin</div>
+      </div>
+    </div>
+    <div class="topbar-title" id="topbar-title" style="font-size:1.15rem;font-weight:700;color:var(--text);margin-left:2rem;flex-grow:1;display:flex;align-items:center;gap:0.5rem;">
+      Dashboard
+    </div>
+    <div class="topbar-right">
+      <div class="live-dot" title="Conectado en tiempo real"></div>
+      <div class="user-chip">
+        <div class="user-avatar" id="user-avatar">A</div>
+        <span id="user-name-display">Admin</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Salir</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section-label">Principal</div>
+    <div class="nav-item active" onclick="showSection('dashboard')" id="nav-dashboard">
+      <span class="nav-icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showSection('guides')" id="nav-guides">
+      <span class="nav-icon">📋</span> Guías
+      <span class="nav-badge" id="badge-guides">0</span>
+    </div>
+    <div class="nav-item" onclick="showSection('assign')" id="nav-assign">
+      <span class="nav-icon">🗺️</span> Asignar ruta
+    </div>
+    <div class="sidebar-section-label">Seguimiento</div>
+    <div class="nav-item" onclick="showSection('monitor')" id="nav-monitor">
+      <span class="nav-icon">📡</span> Monitor
+    </div>
+    <div class="nav-item" onclick="showSection('map')" id="nav-map">
+      <span class="nav-icon">📍</span> Mapa en vivo
+    </div>
+    <div class="nav-item" onclick="showSection('history')" id="nav-history">
+      <span class="nav-icon">📜</span> Historial
+    </div>
+    <div class="sidebar-section-label">Administración</div>
+    <div class="nav-item" onclick="showSection('caja')" id="nav-caja">
+      <span class="nav-icon">💵</span> Caja
+    </div>
+    <div class="nav-item" onclick="showSection('users')" id="nav-users">
+      <span class="nav-icon">👥</span> Usuarios
+    </div>
+    <div class="nav-item" onclick="showSection('productos')" id="nav-productos">
+      <span class="nav-icon">🛍️</span> Productos
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main-content">
+
+    <!-- ── DASHBOARD ── -->
+    <section class="page-section active" id="section-dashboard">
+      <div class="stats-grid mb-2" id="stats-grid">
+        <div class="stat-card primary"><div class="stat-icon">📦</div><div class="stat-value" id="stat-total">—</div><div class="stat-label">Guías hoy</div></div>
+        <div class="stat-card success"><div class="stat-icon">✅</div><div class="stat-value" id="stat-delivered">—</div><div class="stat-label">Entregadas</div></div>
+        <div class="stat-card info"><div class="stat-icon">💰</div><div class="stat-value" id="stat-value">—</div><div class="stat-label">Valor total hoy</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Actividad reciente</h3>
+          <button class="btn btn-sm btn-secondary" onclick="showSection('history')">Ver todo →</button>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Guía</th><th>Mensajero</th><th>Valor</th><th>Pago</th><th>Hora</th>
+              </tr></thead>
+              <tbody id="recent-table"><tr><td colspan="5" class="text-center text-muted">Cargando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── GUÍAS ── -->
+    <section class="page-section" id="section-guides">
+      <div class="filters-bar">
+        <select id="filter-status" onchange="loadGuides()">
+          <option value="">Todos los estados</option>
+          <option value="en_oficina">En oficina</option>
+          <option value="en_ruta">En ruta</option>
+          <option value="entregado">Entregado</option>
+        </select>
+        <select id="filter-type" onchange="loadGuides()">
+          <option value="">Todos los tipos</option>
+          <option value="entrega">Entrega</option>
+          <option value="envio">Envío</option>
+        </select>
+        <input type="date" id="filter-date" onchange="loadGuides()">
+        <button class="btn btn-sm btn-secondary" onclick="clearGuideFilters()">✕ Limpiar</button>
+        <div class="flex gap-1" style="margin-left:auto">
+          <button class="btn btn-sm btn-success" onclick="exportarExcel()">📊 Excel</button>
+          <button class="btn btn-sm btn-danger" onclick="exportarPDF()">📕 PDF</button>
+          <span class="text-muted text-sm" style="display:flex;align-items:center;margin-left:.5rem">
+            <span id="guides-count">0</span> guías
+          </span>
+        </div>
+      </div>
+
+      <div id="guides-table-wrap">
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Guía</th><th>Tipo</th><th>Valor</th><th>Pago</th>
+                <th>Estado</th><th>Mensajero</th><th>Sistema</th><th>Acciones</th>
+              </tr></thead>
+              <tbody id="inline-create-tbody">
+                <tr class="inline-create-row">
+                  <td>
+                    <input type="text" id="ng-number" class="inline-input" placeholder="Ej: 1234..." maxlength="30" onkeydown="if(event.key==='Enter') document.getElementById('ng-value').focus()">
+                  </td>
+                  <td>
+                    <div class="inline-btn-group" id="ng-type-group">
+                      <button data-value="entrega" class="active" onclick="setInlineGroup('ng-type-group', 'entrega')">Entrega</button>
+                      <button data-value="envio" onclick="setInlineGroup('ng-type-group', 'envio')">Envío</button>
+                    </div>
+                  </td>
+                  <td>
+                    <input type="number" id="ng-value" class="inline-input" placeholder="Valor $" min="0" onkeydown="if(event.key==='Enter') createGuideInline()">
+                  </td>
+                  <td>
+                    <div class="inline-btn-group" id="ng-payment-group">
+                      <button data-value="nequi" class="active" onclick="setInlineGroup('ng-payment-group', 'nequi')">Nequi</button>
+                      <button data-value="efectivo" onclick="setInlineGroup('ng-payment-group', 'efectivo')">Efe.</button>
+                      <button data-value="pago_directo" onclick="setInlineGroup('ng-payment-group', 'pago_directo')">Directo</button>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-oficina" style="font-size:0.7rem">En oficina</span></td>
+                  <td><span class="text-muted">—</span></td>
+                  <td></td>
+                  <td>
+                    <button id="btn-guardar-guia" class="btn btn-sm btn-primary" onclick="createGuideInline()">Guardar</button>
+                  </td>
+                </tr>
+              </tbody>
+              <tbody id="guides-tbody"><tr><td colspan="8" class="text-center text-muted">Cargando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── ASIGNAR RUTA ── -->
+    <section class="page-section" id="section-assign">
+      <div style="display:grid;grid-template-columns:1fr 280px;gap:1.2rem;align-items:start">
+        <div>
+          <!-- Escáner -->
+          <div class="card" style="margin-bottom:1rem; padding: 1.5rem; border-left: 4px solid var(--primary);">
+            <label style="font-weight: 700; display:block; margin-bottom:.5rem;">Ingreso por escáner de barras</label>
+            <input type="text" id="scan-assign-input" placeholder="Escanea o escribe el número de guía y presiona Enter..." class="inline-input" style="font-size: 1.1rem; padding: .8rem; font-family: monospace;" onkeydown="if(event.key==='Enter') { handleScanInput(this.value); this.value=''; }">
+            <div id="scan-error" class="text-sm" style="color:var(--danger);margin-top:.5rem;display:none;font-weight:600;"></div>
+          </div>
+
+          <!-- Lista de escaneadas -->
+          <div class="card">
+            <div class="card-header" style="padding-bottom:0; border-bottom:none;">
+              <h3>Guías escaneadas listas para asignar</h3>
+              <button class="btn btn-sm btn-secondary" onclick="clearScannedAssign()">Limpiar lista</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr>
+                  <th style="width: 40px">#</th><th>Guía</th><th>Valor ($)</th><th>Acción</th>
+                </tr></thead>
+                <tbody id="scanned-guides-list">
+                  <tr><td colspan="4" class="text-center text-muted">Aún no hay guías escaneadas</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-panels">
+          <div class="assign-panel card" style="padding:1.2rem; margin-bottom:1rem">
+            <h4>📋 Asignación</h4>
+            <div class="form-group">
+              <label>Mensajero</label>
+              <select id="assign-dom" class="w-100">
+                <option value="">Seleccionar…</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-top:1rem">
+              <label>Base del mensajero ($)</label>
+              <input type="number" id="assign-base" class="w-100" placeholder="0" value="0">
+            </div>
+            <div style="text-align:center;margin:.8rem 0">
+              <div class="selected-count" id="selected-count">0</div>
+              <div class="text-sm text-muted">guías escaneadas</div>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="doAssign()" id="btn-do-assign" disabled>
+              🗺️ Enviar ruta
+            </button>
+          </div>
+        </div>
+      </div>
+
+
+    </section>
+
+    <!-- ── MONITOR DE MENSAJEROS (STANDALONE) ── -->
+    <section id="section-monitor" class="page-section" style="padding:0;height:100%">
+      <div style="padding:24px;width:100%;box-sizing:border-box">
+        <h2 style="font-family:'Inter',sans-serif;font-size:1.4rem;font-weight:700;color:#1A1A1A;margin:0 0 20px 0">Monitor de Mensajeros</h2>
+        <div id="monitor-standalone-container" style="width:100%;box-sizing:border-box"></div>
+      </div>
+    </section>
+
+    <!-- ── MAPA ── -->
+    <section class="page-section" id="section-map">
+      <div style="display:flex; justify-content:flex-end; margin-bottom: 1rem;">
+        <div class="flex gap-1" id="map-dom-filters"></div>
+      </div>
+      <div id="map-container"></div>
+    </section>
+
+    <!-- ── HISTORIAL ── -->
+    <section class="page-section" id="section-history">
+      <div class="filters-bar" style="margin-bottom:1rem">
+        <input type="date" id="hist-date">
+        <select id="hist-dom">
+          <option value="">Todos los mensajeros</option>
+        </select>
+        <button class="btn btn-sm btn-primary" onclick="loadHistory()">Filtrar</button>
+        <button class="btn btn-sm btn-secondary" onclick="clearHistFilters()">✕</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Guía</th><th>Tipo</th><th>Valor</th><th>Pago</th>
+              <th>Mensajero</th><th>Fecha entrega</th><th>Ubicación</th>
+            </tr></thead>
+            <tbody id="history-tbody"><tr><td colspan="7" class="text-center text-muted">Selecciona filtros para ver</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── USUARIOS ── -->
+    <section class="page-section" id="section-users">
+      <div style="display:flex; justify-content:flex-end; margin-bottom: 1rem;">
+        <button class="btn btn-primary btn-sm" onclick="openNewUserModal()">+ Nuevo usuario</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Creado</th></tr></thead>
+            <tbody id="users-tbody"><tr><td colspan="4" class="text-center text-muted">Cargando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CAJA ── -->
+    <section class="page-section" id="section-caja">
+
+      <!-- Estado actual -->
+      <div class="caja-status-card">
+        <div class="caja-status-left">
+          <div class="caja-status-icon">💵</div>
+          <div>
+            <div class="caja-status-title">
+              Estado de Caja &nbsp;
+              <span id="caja-estado-badge" class="caja-badge caja-badge-loading">—</span>
+            </div>
+            <div class="caja-status-meta">
+              Abierta el <strong id="caja-fecha-apertura">—</strong> &nbsp;·&nbsp; Responsable: <strong id="caja-nombre-apertura">—</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPIs del día -->
+      <div class="caja-kpi-grid">
+        <div class="caja-kpi-card">
+          <div class="caja-kpi-icon" style="background: #166534;">💵</div>
+          <div class="caja-kpi-value" id="caja-total-efectivo">$0</div>
+          <div class="caja-kpi-label">Efectivo entregado</div>
+        </div>
+        <div class="caja-kpi-card">
+          <div class="caja-kpi-icon" style="background: #2C0A5E; color: white; font-weight: 800; font-size: 1.1rem;">N</div>
+          <div class="caja-kpi-value" id="caja-total-nequi">$0</div>
+          <div class="caja-kpi-label">Nequi</div>
+        </div>
+        <div class="caja-kpi-card">
+          <div class="caja-kpi-icon" style="background: #1e40af;">🏦</div>
+          <div class="caja-kpi-value" id="caja-total-directo">$0</div>
+          <div class="caja-kpi-label">Pago directo</div>
+        </div>
+        <div class="caja-kpi-card caja-kpi-card--highlight">
+          <div class="caja-kpi-icon" style="background: linear-gradient(135deg,#15803d,#4ade80);">📊</div>
+          <div class="caja-kpi-value" id="caja-esperado">$0</div>
+          <div class="caja-kpi-label">Total esperado en caja</div>
+        </div>
+      </div>
+
+      <!-- Formulario de cierre -->
+      <div class="caja-close-form">
+        <div class="caja-close-header">
+          <h3>🔒 Cerrar Caja del Día</h3>
+          <p class="text-muted">Registra el conteo físico antes de cerrar la jornada.</p>
+        </div>
+        <hr class="caja-divider">
+        <div class="form-group">
+          <label>Efectivo físico contado ($)</label>
+          <input type="number" id="caja-dinero-contado" placeholder="Total en billetes y monedas..." min="0">
+        </div>
+        <div class="form-group">
+          <label>Nombre de quien cierra</label>
+          <input type="text" id="caja-nombre-cierre" placeholder="Tu nombre completo...">
+        </div>
+        <div class="form-group">
+          <label>Observaciones <span style="color:var(--text-muted);font-weight:400;">(opcional)</span></label>
+          <input type="text" id="caja-observaciones" placeholder="Ej: Faltaron $500, se encontró billete falso...">
+        </div>
+        <button class="btn btn-primary btn-block btn-lg caja-close-btn" onclick="cerrarCaja()" id="btn-cerrar-caja">
+          Cerrar Caja
+        </button>
+      </div>
+
+    </section>
+
+    <!-- ── PRODUCTOS ── -->
+    <section class="page-section" id="section-productos">
+
+      <!-- Formulario inline agregar/editar -->
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header">
+          <h3 id="prod-form-title">➕ Nuevo Producto</h3>
+          <div style="display:flex;gap:.5rem;">
+            <button class="btn btn-sm btn-secondary" onclick="resetProductForm()" id="btn-prod-cancel" style="display:none;">Cancelar</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <input type="hidden" id="prod-edit-id">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;">
+            <div class="form-group" style="margin-bottom:0">
+              <label>Nombre *</label>
+              <input type="text" id="prod-nombre" placeholder="Ej: Crema Nivea 200ml" maxlength="120">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>Categoría</label>
+              <select id="prod-categoria">
+                <option value="cremas">🧴 Cremas</option>
+                <option value="lociones">💧 Lociones</option>
+                <option value="desodorantes">✨ Desodorantes</option>
+                <option value="otros">📦 Otros</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>Precio ($)</label>
+              <input type="number" id="prod-precio" placeholder="Ej: 15000" min="0">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>URL de imagen</label>
+              <input type="url" id="prod-imagen" placeholder="https://... (opcional)">
+            </div>
+            <div class="form-group" style="margin-bottom:0;grid-column:1/-1">
+              <label>Descripción</label>
+              <input type="text" id="prod-desc" placeholder="Descripción breve del producto" maxlength="300">
+            </div>
+            <div class="form-group" style="margin-bottom:0;display:flex;align-items:center;gap:.6rem;">
+              <label style="margin-bottom:0">Activo</label>
+              <input type="checkbox" id="prod-activo" checked style="width:18px;height:18px;accent-color:var(--primary);cursor:pointer;">
+            </div>
+          </div>
+          <div style="margin-top:1.2rem;display:flex;gap:.6rem;">
+            <button class="btn btn-primary" onclick="saveProduct()" id="btn-prod-save">💾 Guardar producto</button>
+            <button class="btn btn-secondary" onclick="resetProductForm()" id="btn-prod-reset">✕ Limpiar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de productos -->
+      <div class="card">
+        <div class="card-header">
+          <h3>📋 Productos registrados</h3>
+          <span class="text-muted text-sm"><span id="prod-count">0</span> productos</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Imagen</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Estado</th><th>Acciones</th>
+            </tr></thead>
+            <tbody id="productos-tbody"><tr><td colspan="6" class="text-center text-muted">Cargando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div><!-- end app-shell -->
+
+<!-- ══════════════════════════════════════════════════════════
+     MODALS
+════════════════════════════════════════════════════════════ -->
+
+<!-- Apertura de Caja (Bloqueante) -->
+<div class="modal-backdrop hidden" id="modal-caja-apertura" style="z-index:9999; background:rgba(10,10,20,0.88); backdrop-filter:blur(4px);">
+  <div class="caja-apertura-box">
+    <div class="caja-apertura-logo">
+      <div class="brand-icon" style="width:48px;height:48px;font-size:1.6rem;margin:0 auto;">📦</div>
+      <div style="margin-top:.5rem;font-size:.8rem;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;font-weight:600;">Interrapidísimo · Villa Rica</div>
+    </div>
+    <h2 class="caja-apertura-title">Abrir Caja</h2>
+    <p class="caja-apertura-sub">Para comenzar la jornada debes registrar la apertura de caja.</p>
+    <hr class="caja-divider">
+    <div class="form-group">
+      <label>Tu nombre completo</label>
+      <input type="text" id="ca-nombre" placeholder="Ej: Carolina Martínez" autocomplete="name">
+    </div>
+    <div class="form-group">
+      <label>Base inicial en efectivo ($)</label>
+      <input type="number" id="ca-base" placeholder="Ej: 50000" min="0">
+    </div>
+    <button class="btn btn-primary btn-block btn-lg caja-close-btn" onclick="abrirCaja()" id="btn-abrir-caja" style="margin-top:1.5rem;">
+      Abrir Caja y Comenzar
+    </button>
+  </div>
+</div>
+
+
+<!-- Nuevo usuario -->
+<div class="modal-backdrop hidden" id="modal-new-user">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>👤 Nuevo Usuario</h3>
+      <button class="btn-close" onclick="closeModal('modal-new-user')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" id="nu-name" placeholder="Ej: Carlos Pérez">
+      </div>
+      <div class="form-group">
+        <label>Usuario (login)</label>
+        <input type="text" id="nu-username" placeholder="Ej: carlos.perez">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="nu-password" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="form-group">
+        <label>Rol</label>
+        <select id="nu-role">
+          <option value="domiciliario">Domiciliario</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-new-user')">Cancelar</button>
+      <button class="btn btn-primary" onclick="createUser()">Crear usuario</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="js/supabase-client.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

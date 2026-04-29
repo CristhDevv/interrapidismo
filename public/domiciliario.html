@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Interrapidísimo — Mensajero</title>
+  <meta name="description" content="App de mensajero Interrapidísimo">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- QuaggaJS barcode scanner -->
+  <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Estilos -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/domiciliario.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     LOGIN
+════════════════════════════════════════════════════════════ -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-icon">🛵</div>
+      <span>Mensajero</span>
+    </div>
+    <p class="login-subtitle">Interrapidísimo Villa Rica</p>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="login-user" placeholder="mensajero@interrapidisimo.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div id="login-error" class="text-sm" style="color:var(--danger);margin-bottom:.8rem;display:none"></div>
+    <button class="btn btn-primary btn-block btn-lg" onclick="doLogin()" id="login-btn">
+      Entrar
+    </button>
+    <div class="text-center mt-2">
+      <a href="/" class="text-sm text-muted" style="text-decoration:underline">← Sitio público</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     APP
+════════════════════════════════════════════════════════════ -->
+<div class="dom-shell hidden" id="dom-shell">
+
+  <!-- Header -->
+  <header class="dom-header">
+    <div class="dom-brand">
+      <div class="dom-brand-icon">🛵</div>
+      <div>
+        <div class="dom-brand-name">Mensajero</div>
+        <div class="dom-user-name" id="dom-user-name">Cargando…</div>
+      </div>
+    </div>
+    <div class="dom-header-right">
+      <button class="sync-btn" id="sync-btn" onclick="syncAll()" title="Sincronizar">🔄</button>
+      <button class="btn btn-sm btn-secondary" onclick="doLogout()">Salir</button>
+    </div>
+  </header>
+
+  <!-- Resumen de Ruta en vivo -->
+  <div class="card" style="margin: 0.8rem; padding: 1rem; background: var(--bg-card); border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+    <h4 style="margin:0 0 .5rem 0; font-size:1rem; color:var(--primary);">Resumen de mi ruta</h4>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:.5rem; font-size:.85rem;">
+      <div style="color:var(--success)">💵 <b>Efectivo:</b> <span id="summ-efectivo">$0</span></div>
+      <div style="color:var(--primary)">📱 <b>Nequi:</b> <span id="summ-nequi">$0</span></div>
+      <div>🏦 <b>Directo:</b> <span id="summ-directo">$0</span></div>
+      <div style="color:var(--danger)">💰 <b>Base rec.:</b> <span id="summ-base">$0</span></div>
+    </div>
+    <div style="margin-top:.8rem; padding-top:.8rem; border-top:1px dashed var(--border-color); font-weight:700; font-size:1rem; text-align:right;">
+      A entregar: <span id="summ-total" style="color:var(--success)">$0</span>
+    </div>
+  </div>
+
+  <!-- Stats strip -->
+  <div class="dom-stats">
+    <div class="dom-stat">
+      <div class="dom-stat-val primary" id="stat-total">0</div>
+      <div class="dom-stat-lbl">Total</div>
+    </div>
+    <div class="dom-stat">
+      <div class="dom-stat-val warning" id="stat-pending">0</div>
+      <div class="dom-stat-lbl">Pendientes</div>
+    </div>
+    <div class="dom-stat">
+      <div class="dom-stat-val success" id="stat-done">0</div>
+      <div class="dom-stat-lbl">Entregadas</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="dom-tabs">
+    <div class="dom-tab active" id="tab-guides" onclick="showTab('guides')">
+      <span class="tab-icon">📋</span>Mis guías
+    </div>
+    <div class="dom-tab" id="tab-scanner" onclick="showTab('scanner')">
+      <span class="tab-icon">📷</span>Escáner
+    </div>
+    <div class="dom-tab" id="tab-location" onclick="showTab('location')">
+      <span class="tab-icon">📍</span>Ubicación
+    </div>
+  </div>
+
+  <!-- Tab content -->
+  <div class="dom-tab-content">
+
+    <!-- Guías -->
+    <div class="dom-tab-panel active" id="panel-guides">
+      <div id="guides-list"></div>
+    </div>
+
+    <!-- Scanner -->
+    <div class="dom-tab-panel" id="panel-scanner">
+      <div id="scanner-section">
+        <div class="scanner-box">
+          <div class="scanner-header">📷 Escáner de código de barras</div>
+          <div id="scanner-video-wrap">
+            <div class="scanner-overlay">
+              <div class="scanner-frame">
+                <div class="scan-line"></div>
+              </div>
+            </div>
+          </div>
+          <div class="scanner-result hidden" id="scanner-result">
+            <span>📦</span>
+            <span id="scanner-result-text">—</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:.5rem;margin-bottom:1rem">
+          <button class="btn btn-primary" style="flex:1" id="btn-start-scan" onclick="startScanner()">📷 Iniciar cámara</button>
+          <button class="btn btn-secondary" id="btn-stop-scan" onclick="stopScanner()" style="display:none">⏹ Detener</button>
+        </div>
+        <div class="scanner-box" style="padding:1rem">
+          <div class="text-sm text-muted mb-1" style="font-weight:600">O ingresa manualmente:</div>
+          <div class="scanner-manual">
+            <input type="text" id="manual-guide" placeholder="Número de guía…" maxlength="30">
+            <button class="btn btn-primary" onclick="searchManual()">Buscar</button>
+          </div>
+        </div>
+        <div id="scan-found" class="hidden" style="margin-top:1rem"></div>
+      </div>
+    </div>
+
+    <!-- Ubicación -->
+    <div class="dom-tab-panel" id="panel-location">
+      <div style="padding:1rem">
+        <div class="location-card">
+          <div class="location-status">
+            <div class="location-dot" id="loc-dot"></div>
+            <span id="loc-status">GPS no activado</span>
+          </div>
+          <div class="gps-coords" id="gps-coords">—</div>
+        </div>
+        <button class="btn btn-primary btn-block mb-1" id="btn-gps" onclick="startGPS()">
+          📍 Activar GPS y reportar
+        </button>
+        <button class="btn btn-secondary btn-block" onclick="stopGPS()">⏹ Detener GPS</button>
+        <div class="location-card mt-2" style="font-size:.82rem;color:var(--text-muted)">
+          <p>📡 Tu ubicación se reporta automáticamente a la oficina cada 30 segundos cuando está activo.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dom-bottom-space"></div>
+</div>
+
+
+
+
+<div id="toast-container"></div>
+
+<script src="js/supabase-client.js"></script>
+<script src="js/scanner.js"></script>
+</body>
+</html>
