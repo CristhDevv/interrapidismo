@@ -528,13 +528,13 @@ async function doAssign() {
     // 2. Insert into daily_routes
     const today = new Date().toLocaleDateString('sv-SE');
     const routeInserts = scannedGuides.map((g, idx) => ({ domiciliario_id, guia_id: g.id, fecha: today, orden: idx + 1 }));
-    await supabase.from('daily_routes').upsert(routeInserts, { onConflict: 'guia_id, fecha' });
+    await supabase.from('daily_routes').upsert(routeInserts, { onConflict: 'guia_id,fecha' });
 
     // 3. Update base
     if (base_amount > 0) {
       await supabase.from('courier_bases').upsert([{
         domiciliario_id, fecha: today, base_amount
-      }], { onConflict: 'domiciliario_id, fecha' });
+      }], { onConflict: 'domiciliario_id,fecha' });
     }
 
     toast(`${scannedGuides.length} guías asignadas ✅`, 'success');
