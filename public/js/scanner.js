@@ -203,7 +203,21 @@ async function loadMyGuides() {
       .order('orden', { ascending: true });
 
     if (!routes || !routes.length) {
-      myGuides = [];
+      // Fallback: Consultar directamente en guias si no hay daily_routes
+      const { data: fallbackGuides } = await supabase.from('guias')
+        .select('*')
+        .eq('domiciliario_id', domiciliarioId)
+        .gte('fecha_asignacion', `${today}T00:00:00Z`)
+        .lt('fecha_asignacion', `${today}T23:59:59Z`);
+
+      if (!fallbackGuides || !fallbackGuides.length) {
+        myGuides = [];
+        renderGuidesList();
+        updateStats();
+        return;
+      }
+
+      myGuides = fallbackGuides.map((g, idx) => ({ ...g, orden: idx + 1 }));
       renderGuidesList();
       updateStats();
       return;
