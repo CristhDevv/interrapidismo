@@ -418,7 +418,7 @@ function handleScanInput(code) {
 
   const existing = guidesCache.find(g => g.numero_guia === code);
   const guideEntry = existing || { id: null, numero_guia: code, tipo: 'entrega', monto: 0, status: 'en_oficina' };
-  scannedGuides.unshift(guideEntry);
+  scannedGuides.push(guideEntry);
   saveScannedGuides();
   renderScannedGuides();
   updateSelectedCount();
@@ -656,21 +656,25 @@ function renderLiveMonitor(summaries, containerId = 'live-couriers-list') {
         </div>
 
         <!-- KPIs -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #F3F4F6">
-          <div style="padding:24px 32px;text-align:center;border-right:1px solid #F3F4F6">
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid #F3F4F6">
+          <div style="padding:20px 16px;text-align:center;border-right:1px solid #F3F4F6">
             <div style="font-size:2.2rem;font-weight:900;color:#1A1A1A;line-height:1">${s.entregadas}</div>
             <div style="font-size:11px;color:#6B7280;font-weight:700;margin-top:6px;letter-spacing:.8px">ENTREGADAS</div>
           </div>
-          <div style="padding:24px 32px;text-align:center;border-right:1px solid #F3F4F6">
+          <div style="padding:20px 16px;text-align:center;border-right:1px solid #F3F4F6">
             <div style="font-size:2.2rem;font-weight:900;color:${s.pendientes > 0 ? '#D97706' : '#9CA3AF'};line-height:1">${s.pendientes}</div>
             <div style="font-size:11px;color:#6B7280;font-weight:700;margin-top:6px;letter-spacing:.8px">PENDIENTES</div>
           </div>
-          <div style="padding:24px 32px;text-align:center;border-right:1px solid #F3F4F6">
-            <div style="font-size:1.6rem;font-weight:900;color:#16a34a;line-height:1">${formatCOP(s.efectivo)}</div>
+          <div style="padding:20px 16px;text-align:center;border-right:1px solid #F3F4F6">
+            <div style="font-size:1.4rem;font-weight:900;color:#6366f1;line-height:1">${formatCOP(s.base)}</div>
+            <div style="font-size:11px;color:#6B7280;font-weight:700;margin-top:6px;letter-spacing:.8px">💼 BASE</div>
+          </div>
+          <div style="padding:20px 16px;text-align:center;border-right:1px solid #F3F4F6">
+            <div style="font-size:1.4rem;font-weight:900;color:#16a34a;line-height:1">${formatCOP(s.efectivo)}</div>
             <div style="font-size:11px;color:#6B7280;font-weight:700;margin-top:6px;letter-spacing:.8px">EFECTIVO</div>
           </div>
-          <div style="padding:24px 32px;text-align:center">
-            <div style="font-size:1.6rem;font-weight:900;color:#FF6B00;line-height:1">${formatCOP(s.a_entregar)}</div>
+          <div style="padding:20px 16px;text-align:center">
+            <div style="font-size:1.4rem;font-weight:900;color:#FF6B00;line-height:1">${formatCOP(s.a_entregar)}</div>
             <div style="font-size:11px;color:#6B7280;font-weight:700;margin-top:6px;letter-spacing:.8px">A ENTREGAR</div>
           </div>
         </div>
