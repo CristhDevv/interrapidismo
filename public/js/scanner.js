@@ -193,7 +193,7 @@ async function syncAll() {
 // ── My guides ─────────────────────────────────────────────
 async function loadMyGuides() {
   if (!currentUser) return;
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toLocaleDateString('sv-SE');
   
   try {
     const { data: routes } = await supabase.from('daily_routes')

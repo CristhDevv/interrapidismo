@@ -501,48 +501,53 @@ async function doAssign() {
   const base_amount = parseFloat(document.getElementById('assign-base').value) || 0;
   if (!domiciliario_id || !scannedGuides.length) return;
   
-  for (const g of scannedGuides) {
-    const original = guidesCache.find(x => x.numero_guia === g.numero_guia);
-    if (original && original.monto !== g.monto) {
-      const msg = `La guía ${g.numero_guia} ya tiene un valor de ${formatCOP(original.monto)}. ¿Cambiar a ${formatCOP(g.monto)}?`;
-      if (!window.confirm(msg)) return;
+  try {
+    for (const g of scannedGuides) {
+      const original = guidesCache.find(x => x.numero_guia === g.numero_guia);
+      if (original && original.monto !== g.monto) {
+        const msg = `La guía ${g.numero_guia} ya tiene un valor de ${formatCOP(original.monto)}. ¿Cambiar a ${formatCOP(g.monto)}?`;
+        if (!window.confirm(msg)) return;
+      }
     }
-  }
 
-  // 1. Update or create guides
-  for (const g of scannedGuides) {
-    if (g.id) {
-      await supabase.from('guias').update({
-        domiciliario_id, status: 'en_ruta', monto: g.monto, tipo: g.tipo, fecha_asignacion: new Date().toISOString()
-      }).eq('id', g.id);
-    } else {
-      const { data } = await supabase.from('guias').insert([{
-        numero_guia: g.numero_guia, monto: g.monto, tipo: g.tipo,
-        domiciliario_id, status: 'en_ruta', fecha_asignacion: new Date().toISOString()
-      }]).select().single();
-      g.id = data.id;
+    // 1. Update or create guides
+    for (const g of scannedGuides) {
+      if (g.id) {
+        await supabase.from('guias').update({
+          domiciliario_id, status: 'en_ruta', monto: g.monto, tipo: g.tipo, fecha_asignacion: new Date().toISOString()
+        }).eq('id', g.id);
+      } else {
+        const { data } = await supabase.from('guias').insert([{
+          numero_guia: g.numero_guia, monto: g.monto, tipo: g.tipo,
+          domiciliario_id, status: 'en_ruta', fecha_asignacion: new Date().toISOString()
+        }]).select().single();
+        g.id = data.id;
+      }
     }
+
+    // 2. Insert into daily_routes
+    const today = new Date().toLocaleDateString('sv-SE');
+    const routeInserts = scannedGuides.map((g, idx) => ({ domiciliario_id, guia_id: g.id, fecha: today, orden: idx + 1 }));
+    await supabase.from('daily_routes').upsert(routeInserts, { onConflict: 'guia_id, fecha' });
+
+    // 3. Update base
+    if (base_amount > 0) {
+      await supabase.from('courier_bases').upsert([{
+        domiciliario_id, fecha: today, base_amount
+      }], { onConflict: 'domiciliario_id, fecha' });
+    }
+
+    toast(`${scannedGuides.length} guías asignadas ✅`, 'success');
+    scannedGuides = [];
+    localStorage.removeItem(LS_SCANNED_KEY);
+    const baseInp = document.getElementById('assign-base');
+    if (baseInp) baseInp.value = '0';
+    renderScannedGuides();
+    loadAssignGuides();
+  } catch (err) {
+    console.error('Error en doAssign:', err);
+    toast('Error al asignar la ruta', 'error');
   }
-
-  // 2. Insert into daily_routes
-  const today = new Date().toISOString().split('T')[0];
-  const routeInserts = scannedGuides.map((g, idx) => ({ domiciliario_id, guia_id: g.id, fecha: today, orden: idx + 1 }));
-  await supabase.from('daily_routes').upsert(routeInserts, { onConflict: 'guia_id, fecha' });
-
-  // 3. Update base
-  if (base_amount > 0) {
-    await supabase.from('courier_bases').upsert([{
-      domiciliario_id, fecha: today, base_amount
-    }], { onConflict: 'domiciliario_id, fecha' });
-  }
-
-  toast(`${scannedGuides.length} guías asignadas ✅`, 'success');
-  scannedGuides = [];
-  localStorage.removeItem(LS_SCANNED_KEY);
-  const baseInp = document.getElementById('assign-base');
-  if (baseInp) baseInp.value = '0';
-  renderScannedGuides();
-  loadAssignGuides();
 }
 window.doAssign = doAssign;
 
