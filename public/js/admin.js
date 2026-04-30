@@ -259,7 +259,11 @@ async function loadDashboard() {
 async function loadGuides() {
   const status = document.getElementById('filter-status')?.value || '';
   const type   = document.getElementById('filter-type')?.value   || '';
-  const date   = document.getElementById('filter-date')?.value   || '';
+  let date     = document.getElementById('filter-date')?.value   || '';
+  
+  if (!date) {
+    date = new Date().toISOString().split('T')[0];
+  }
   
   let query = supabase.from('guias').select('*, domiciliarios(nombre)').order('created_at', { ascending: false });
   if (status) query = query.eq('status', status);
@@ -955,16 +959,22 @@ async function loadCajaSection() {
   fechaAp.textContent = formatDate(currentCaja.fecha_apertura);
   nomAp.textContent = currentCaja.nombre_apertura;
   
+  const cajaDate = currentCaja.fecha_apertura.split('T')[0];
+
   // Guías admin (domiciliario_id null) — todas cuentan para KPIs
   const { data: guiasAdmin } = await supabase.from('guias')
       .select('monto, metodo_pago')
-      .is('domiciliario_id', null);
+      .is('domiciliario_id', null)
+      .gte('created_at', `${cajaDate}T00:00:00Z`)
+      .lt('created_at', `${cajaDate}T23:59:59Z`);
 
   // Guías mensajero (domiciliario_id not null, entregado=true)
   const { data: guiasMensajero } = await supabase.from('guias')
       .select('monto, metodo_pago')
       .not('domiciliario_id', 'is', null)
-      .eq('entregado', true);
+      .eq('entregado', true)
+      .gte('created_at', `${cajaDate}T00:00:00Z`)
+      .lt('created_at', `${cajaDate}T23:59:59Z`);
 
   const todasGuias = [...(guiasAdmin || []), ...(guiasMensajero || [])];
 
