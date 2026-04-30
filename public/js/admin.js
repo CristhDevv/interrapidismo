@@ -546,7 +546,7 @@ async function doAssign() {
     loadAssignGuides();
   } catch (err) {
     console.error('Error en doAssign:', err);
-    toast('Error al asignar la ruta', 'error');
+    toast(`Error: ${err.message || 'Error desconocido'}`, 'error');
   }
 }
 window.doAssign = doAssign;
