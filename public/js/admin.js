@@ -959,6 +959,87 @@ function renderLiveMonitor(summaries, containerId = 'live-couriers-list') {
   }).join('');
 }
 
+// ── Cerrar Ruta ───────────────────────────────────────────
+async function cerrarRuta(domiciliarioId, domNombre) {
+  const confirmar = confirm(`¿Cerrar la ruta de ${domNombre}?\n\nEsto archivará la jornada y permitirá asignar una nueva ruta.`);
+  if (!confirmar) return;
+
+  const today = new Date().toLocaleDateString('sv-SE');
+
+  // 1. Obtener datos de la sesión actual
+  const { data: routes } = await supabase.from('daily_routes')
+    .select('guia_id')
+    .eq('domiciliario_id', domiciliarioId)
+    .eq('fecha', today);
+
+  const { data: bases } = await supabase.from('courier_bases')
+    .select('base_amount')
+    .eq('domiciliario_id', domiciliarioId)
+    .eq('fecha', today);
+
+  const guiaIds = (routes || []).map(r => r.guia_id);
+  const { data: guias } = guiaIds.length
+    ? await supabase.from('guias').select('monto, metodo_pago, entregado').in('id', guiaIds)
+    : { data: [] };
+
+  // 2. Calcular totales
+  let tEfe = 0, tNeq = 0, tDir = 0, entregadas = 0;
+  (guias || []).forEach(g => {
+    if (!g.entregado) return;
+    entregadas++;
+    const v = parseFloat(g.monto) || 0;
+    if (g.metodo_pago === 'efectivo') tEfe += v;
+    else if (g.metodo_pago === 'nequi') tNeq += v;
+    else if (g.metodo_pago === 'pago_directo') tDir += v;
+  });
+
+  const base = parseFloat(bases?.[0]?.base_amount) || 0;
+  const aEntregar = base + tEfe;
+
+  // 3. Guardar en route_sessions
+  const { error: sessionError } = await supabase.from('route_sessions').insert([{
+    domiciliario_id: domiciliarioId,
+    domiciliario_nombre: domNombre,
+    fecha: today,
+    base_amount: base,
+    total_guias: (guias || []).length,
+    total_entregadas: entregadas,
+    total_efectivo: tEfe,
+    total_nequi: tNeq,
+    total_pago_directo: tDir,
+    a_entregar: aEntregar,
+    cerrada_por: 'Administrador'
+  }]);
+
+  if (sessionError) {
+    toast('Error al cerrar la ruta: ' + sessionError.message, 'error');
+    return;
+  }
+
+  // 4. Limpiar daily_routes y courier_bases del día (para liberar al mensajero)
+  await supabase.from('daily_routes')
+    .delete()
+    .eq('domiciliario_id', domiciliarioId)
+    .eq('fecha', today);
+
+  await supabase.from('courier_bases')
+    .delete()
+    .eq('domiciliario_id', domiciliarioId)
+    .eq('fecha', today);
+
+  // 5. Resetear guías no entregadas a 'en_oficina' para que se puedan re-asignar
+  if (guiaIds.length) {
+    await supabase.from('guias')
+      .update({ status: 'en_oficina', domiciliario_id: null })
+      .in('id', guiaIds)
+      .eq('entregado', false);
+  }
+
+  toast(`✅ Ruta de ${domNombre} cerrada correctamente`, 'success');
+  if (window.fetchLiveMonitor) fetchLiveMonitor();
+}
+window.cerrarRuta = cerrarRuta;
+
 // ── Map ───────────────────────────────────────────────────
 function initMap() {
   if (MAP) return;
