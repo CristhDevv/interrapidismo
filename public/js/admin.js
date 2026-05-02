@@ -1359,6 +1359,7 @@ async function loadCajaSection() {
   document.getElementById('caja-total-directo').textContent = formatCOP(tDir);
 
   const base = parseFloat(currentCaja.base_caja) || 0;
+  document.getElementById('caja-base').textContent = formatCOP(base);
   // esperado = base caja + efectivo cobrado (oficina + mensajeros)
   // La base del mensajero sale de la caja y regresa con él; no se suma aquí.
   const esperado = base + efeAdmin + efeMensajero;
