@@ -496,6 +496,7 @@ async function createGuideInline() {
   const numero_guia  = document.getElementById('ng-number').value.trim();
   const metodo_pago= getInlineGroupValue('ng-payment-group');
   const tipo          = getInlineGroupValue('ng-type-group');
+  const observaciones = document.getElementById('ng-observaciones')?.value.trim() || '';
   
   let monto = 0;
   let pagos_mixtos = [];
@@ -517,7 +518,7 @@ async function createGuideInline() {
     toast('Completa todos los campos','warning'); return; 
   }
   
-  const guiaPayload = { numero_guia, monto, metodo_pago, tipo, status: 'en_oficina', pagos_mixtos };
+  const guiaPayload = { numero_guia, monto, metodo_pago, tipo, status: 'en_oficina', pagos_mixtos, observaciones };
   const { error } = await supabase.from('guias').insert([guiaPayload]);
   
   if (error) {
@@ -541,6 +542,8 @@ async function createGuideInline() {
 
   document.getElementById('ng-number').value = '';
   document.getElementById('ng-value').value = '';
+  const obsEl = document.getElementById('ng-observaciones');
+  if (obsEl) obsEl.value = '';
   document.getElementById('ng-mixto-rows').innerHTML = '';
   if (metodo_pago === 'mixto') addMixtoRow();
   calculateMixtoTotal();
