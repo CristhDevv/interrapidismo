@@ -338,6 +338,19 @@ function setInlineGroup(groupId, value) {
 }
 window.setInlineGroup = setInlineGroup;
 
+function toggleMixtoInputs(method) {
+  const normalInput = document.getElementById('ng-value');
+  const mixtoInputs = document.getElementById('ng-mixto-inputs');
+  if (method === 'mixto') {
+    normalInput.style.display = 'none';
+    mixtoInputs.style.display = 'flex';
+  } else {
+    normalInput.style.display = 'block';
+    mixtoInputs.style.display = 'none';
+  }
+}
+window.toggleMixtoInputs = toggleMixtoInputs;
+
 function getInlineGroupValue(groupId) {
   const activeBtn = document.querySelector(`#${groupId} button.active`);
   return activeBtn ? activeBtn.dataset.value : null;
@@ -345,16 +358,27 @@ function getInlineGroupValue(groupId) {
 
 async function createGuideInline() {
   const numero_guia  = document.getElementById('ng-number').value.trim();
-  const monto         = parseFloat(document.getElementById('ng-value').value);
   const metodo_pago= getInlineGroupValue('ng-payment-group');
   const tipo          = getInlineGroupValue('ng-type-group');
+  
+  let monto = 0;
+  let monto_efectivo = 0;
+  let monto_nequi = 0;
+
+  if (metodo_pago === 'mixto') {
+    monto_efectivo = parseFloat(document.getElementById('ng-value-efectivo')?.value) || 0;
+    monto_nequi = parseFloat(document.getElementById('ng-value-nequi')?.value) || 0;
+    monto = monto_efectivo + monto_nequi;
+  } else {
+    monto = parseFloat(document.getElementById('ng-value').value);
+  }
   
   if (!numero_guia || isNaN(monto) || !metodo_pago || !tipo) { 
     toast('Completa todos los campos','warning'); return; 
   }
   
   const { error } = await supabase.from('guias').insert([{
-    numero_guia, monto, metodo_pago, tipo, status: 'en_oficina'
+    numero_guia, monto, metodo_pago, tipo, status: 'en_oficina', monto_efectivo, monto_nequi
   }]);
   
   if (error) { toast('Error al crear guía: ' + error.message, 'error'); return; }
@@ -362,6 +386,8 @@ async function createGuideInline() {
   toast(`Guía ${numero_guia} creada`, 'success');
   document.getElementById('ng-number').value = '';
   document.getElementById('ng-value').value = '';
+  if (document.getElementById('ng-value-efectivo')) document.getElementById('ng-value-efectivo').value = '';
+  if (document.getElementById('ng-value-nequi')) document.getElementById('ng-value-nequi').value = '';
   document.getElementById('ng-number').focus();
 }
 window.createGuideInline = createGuideInline;
@@ -837,11 +863,17 @@ window.openNewUserModal = openNewUserModal;
 // ── Exportación ───────────────────────────────────────────
 function exportarExcel() {
   if (!guidesCache.length) { toast('No hay datos para exportar','warning'); return; }
-  const data = guidesCache.map(g => ({
-    'Número Guía': g.numero_guia, 'Tipo': g.tipo, 'Valor': g.monto, 'Método Pago': g.metodo_pago,
-    'Estado': g.status, 'Mensajero': g.domiciliarios?.nombre || 'Sin asignar',
-    'Descargado': g.bajado_sistema ? 'Sí' : 'No', 'Fecha Registro': formatDate(g.created_at)
-  }));
+  const data = guidesCache.map(g => {
+    let pagoDisplay = g.metodo_pago;
+    if (g.metodo_pago === 'mixto') {
+      pagoDisplay = `Efectivo: $${g.monto_efectivo || 0} / Nequi: $${g.monto_nequi || 0}`;
+    }
+    return {
+      'Número Guía': g.numero_guia, 'Tipo': g.tipo, 'Valor': g.monto, 'Método Pago': pagoDisplay,
+      'Estado': g.status, 'Mensajero': g.domiciliarios?.nombre || 'Sin asignar',
+      'Descargado': g.bajado_sistema ? 'Sí' : 'No', 'Fecha Registro': formatDate(g.created_at)
+    };
+  });
   const worksheet = XLSX.utils.json_to_sheet(data);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Guías");
@@ -865,14 +897,20 @@ async function exportarPDF() {
   doc.setTextColor(100);
   doc.text(`Generado el: ${date}`, 14, 30);
   
-  const tableData = guidesCache.map(g => [
-    g.numero_guia,
-    g.tipo.toUpperCase(),
-    formatCOP(g.monto),
-    g.metodo_pago.toUpperCase(),
-    g.status.replace('_', ' ').toUpperCase(),
-    g.domiciliarios?.nombre || 'SIN ASIGNAR'
-  ]);
+  const tableData = guidesCache.map(g => {
+    let pagoDisplay = g.metodo_pago.toUpperCase();
+    if (g.metodo_pago === 'mixto') {
+      pagoDisplay = `EFECTIVO: $${g.monto_efectivo || 0} / NEQUI: $${g.monto_nequi || 0}`;
+    }
+    return [
+      g.numero_guia,
+      g.tipo.toUpperCase(),
+      formatCOP(g.monto),
+      pagoDisplay,
+      g.status.replace('_', ' ').toUpperCase(),
+      g.domiciliarios?.nombre || 'SIN ASIGNAR'
+    ];
+  });
   
   doc.autoTable({
     startY: 35,
@@ -968,14 +1006,14 @@ async function loadCajaSection() {
 
   // Guías admin (domiciliario_id null) — todas cuentan para KPIs
   const { data: guiasAdmin } = await supabase.from('guias')
-      .select('monto, metodo_pago')
+      .select('monto, metodo_pago, monto_efectivo, monto_nequi')
       .is('domiciliario_id', null)
       .gte('created_at', `${cajaDate}T00:00:00Z`)
       .lt('created_at', `${cajaDate}T23:59:59Z`);
 
   // Guías mensajero (domiciliario_id not null, entregado=true)
   const { data: guiasMensajero } = await supabase.from('guias')
-      .select('monto, metodo_pago')
+      .select('monto, metodo_pago, monto_efectivo, monto_nequi')
       .not('domiciliario_id', 'is', null)
       .eq('entregado', true)
       .gte('created_at', `${cajaDate}T00:00:00Z`)
@@ -999,6 +1037,10 @@ async function loadCajaSection() {
       if (g.metodo_pago === 'efectivo') efeAdmin += v;
       else if (g.metodo_pago === 'nequi') tNeq += v;
       else if (g.metodo_pago === 'pago_directo') tDir += v;
+      else if (g.metodo_pago === 'mixto') {
+        efeAdmin += parseFloat(g.monto_efectivo) || 0;
+        tNeq += parseFloat(g.monto_nequi) || 0;
+      }
   });
 
   (guiasMensajero || []).forEach(g => {
@@ -1006,6 +1048,10 @@ async function loadCajaSection() {
       if (g.metodo_pago === 'efectivo') efeMensajero += v;
       else if (g.metodo_pago === 'nequi') tNeq += v;
       else if (g.metodo_pago === 'pago_directo') tDir += v;
+      else if (g.metodo_pago === 'mixto') {
+        efeMensajero += parseFloat(g.monto_efectivo) || 0;
+        tNeq += parseFloat(g.monto_nequi) || 0;
+      }
   });
 
   tEfe = efeAdmin + efeMensajero;

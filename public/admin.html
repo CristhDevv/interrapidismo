@@ -186,12 +186,17 @@
                   </td>
                   <td>
                     <input type="number" id="ng-value" class="inline-input" placeholder="Valor $" min="0" onkeydown="if(event.key==='Enter') createGuideInline()">
+                    <div id="ng-mixto-inputs" style="display: none; gap: 0.5rem; flex-direction: column;">
+                      <input type="number" id="ng-value-efectivo" class="inline-input" placeholder="Efectivo $" min="0">
+                      <input type="number" id="ng-value-nequi" class="inline-input" placeholder="Nequi $" min="0">
+                    </div>
                   </td>
                   <td>
                     <div class="inline-btn-group" id="ng-payment-group">
-                      <button data-value="nequi" class="active" onclick="setInlineGroup('ng-payment-group', 'nequi')">Nequi</button>
-                      <button data-value="efectivo" onclick="setInlineGroup('ng-payment-group', 'efectivo')">Efe.</button>
-                      <button data-value="pago_directo" onclick="setInlineGroup('ng-payment-group', 'pago_directo')">Directo</button>
+                      <button data-value="nequi" class="active" onclick="setInlineGroup('ng-payment-group', 'nequi'); toggleMixtoInputs('nequi')">Nequi</button>
+                      <button data-value="efectivo" onclick="setInlineGroup('ng-payment-group', 'efectivo'); toggleMixtoInputs('efectivo')">Efe.</button>
+                      <button data-value="pago_directo" onclick="setInlineGroup('ng-payment-group', 'pago_directo'); toggleMixtoInputs('pago_directo')">Directo</button>
+                      <button data-value="mixto" onclick="setInlineGroup('ng-payment-group', 'mixto'); toggleMixtoInputs('mixto')">Mixto</button>
                     </div>
                   </td>
                   <td><span class="badge badge-oficina" style="font-size:0.7rem">En oficina</span></td>
