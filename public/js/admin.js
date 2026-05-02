@@ -341,6 +341,19 @@ async function loadGuides() {
 }
 window.loadGuides = loadGuides;
 
+async function searchGuia(term) {
+  term = term.trim();
+  if (!term) { loadGuides(); return; }
+  const { data, error } = await supabase.from('guias')
+    .select('*, domiciliarios(nombre)')
+    .ilike('numero_guia', `%${term}%`)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if (error) { toast('Error al buscar', 'error'); return; }
+  renderGuidesTable(data || []);
+}
+window.searchGuia = searchGuia;
+
 function updateBadge() {
   const pending = guidesCache.filter(g => g.status === 'en_oficina').length;
   const badge = document.getElementById('badge-guides');
@@ -415,6 +428,7 @@ function clearGuideFilters() {
   const s = document.getElementById('filter-status'); if (s) s.value = '';
   const t = document.getElementById('filter-type'); if (t) t.value = '';
   const d = document.getElementById('filter-date'); if (d) d.value = '';
+  const srch = document.getElementById('search-guia'); if (srch) srch.value = '';
   loadGuides();
 }
 window.clearGuideFilters = clearGuideFilters;
