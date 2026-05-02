@@ -590,7 +590,7 @@ function renderScannedGuides() {
   }
   tbody.innerHTML = scannedGuides.map((g, idx) => `
     <tr>
-      <td class="text-muted" style="font-size:0.8rem">${idx + 1}</td>
+      <td><input type="number" class="inline-input" style="width:45px; padding:0.2rem; font-size:0.8rem" value="${idx + 1}" min="1" max="${scannedGuides.length}" onchange="updateScannedGuideOrder('${g.numero_guia}', this.value)"></td>
       <td><input type="text" class="inline-input" style="width:130px; padding:0.2rem; font-weight:700" value="${g.numero_guia}" onchange="updateScannedGuideNumber('${g.numero_guia}', this.value)"></td>
       <td>
         <input type="number" class="inline-input" style="width:80px; padding:0.2rem" value="${g.monto}" onchange="updateScannedGuideValue('${g.numero_guia}', this.value)">
@@ -623,6 +623,18 @@ function updateScannedGuideNumber(oldNumero, newNumero) {
   }
 }
 window.updateScannedGuideNumber = updateScannedGuideNumber;
+
+function updateScannedGuideOrder(numero_guia, newOrder) {
+  newOrder = parseInt(newOrder) - 1;
+  if (isNaN(newOrder) || newOrder < 0) return;
+  const idx = scannedGuides.findIndex(x => x.numero_guia === numero_guia);
+  if (idx === -1) return;
+  const [item] = scannedGuides.splice(idx, 1);
+  scannedGuides.splice(newOrder, 0, item);
+  saveScannedGuides();
+  renderScannedGuides();
+}
+window.updateScannedGuideOrder = updateScannedGuideOrder;
 
 function removeScannedGuide(num) {
   scannedGuides = scannedGuides.filter(g => g.numero_guia !== num);
