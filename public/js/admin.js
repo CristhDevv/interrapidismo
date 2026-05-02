@@ -10,6 +10,44 @@ let scannedGuides = [];
 let currentCaja = null;
 
 const LS_SCANNED_KEY = 'irr_scanned_guides';
+const LS_PENDING_KEY = 'guias_pending_sync';
+
+// ── Offline helpers ──────────────────────────────────────────
+function getPendingGuides() {
+  try { return JSON.parse(localStorage.getItem(LS_PENDING_KEY) || '[]'); }
+  catch (e) { return []; }
+}
+
+function savePendingGuides(list) {
+  localStorage.setItem(LS_PENDING_KEY, JSON.stringify(list));
+}
+
+async function syncPendingGuides() {
+  const pending = getPendingGuides();
+  if (!pending.length) return;
+  toast(`Reconectado. Sincronizando ${pending.length} guía(s)...`, 'info');
+  const failed = [];
+  let synced = 0;
+  for (const g of pending) {
+    const payload = { ...g };
+    delete payload._tempId;
+    delete payload._offline;
+    const { error } = await supabase.from('guias').insert([payload]);
+    if (error) {
+      failed.push(g);
+    } else {
+      synced++;
+    }
+  }
+  savePendingGuides(failed);
+  if (synced > 0) toast(`✅ ${synced} guía(s) sincronizadas correctamente`, 'success');
+  if (failed.length > 0) toast(`⚠️ ${failed.length} guía(s) pendientes por error`, 'warning');
+  loadGuides();
+}
+window.syncPendingGuides = syncPendingGuides;
+
+window.addEventListener('online', syncPendingGuides);
+window.addEventListener('offline', () => toast('📡 Sin conexión — guardando localmente', 'warning'));
 
 function saveScannedGuides() {
   localStorage.setItem(LS_SCANNED_KEY, JSON.stringify(scannedGuides));
@@ -279,10 +317,26 @@ async function loadGuides() {
   }
   
   const { data, error } = await query;
-  if (error) { toast('Error al cargar guías','error'); return; }
-  
-  guidesCache = data;
-  renderGuidesTable(data);
+  if (error) {
+    // Fallback offline: mostrar pendientes del localStorage para ese día
+    const pending = getPendingGuides();
+    const dayStr = date;
+    const localForDay = pending.filter(g => (g.created_at || '').startsWith(dayStr));
+    if (localForDay.length) {
+      toast('Sin conexión — mostrando guías locales pendientes', 'warning');
+      guidesCache = localForDay;
+      renderGuidesTable(localForDay);
+    } else {
+      toast('Error al cargar guías y no hay datos locales', 'error');
+    }
+    return;
+  }
+
+  // Mezclar guías online con las offline (pendientes) para el día actual
+  const pending = getPendingGuides();
+  const combined = [...data, ...pending.map(g => ({ ...g, _offline: true }))];
+  guidesCache = combined;
+  renderGuidesTable(combined);
   updateBadge();
 }
 window.loadGuides = loadGuides;
@@ -303,7 +357,7 @@ function renderGuidesTable(guides) {
     return;
   }
   tbody.innerHTML = guides.map(g => `
-    <tr class="${g.bajado_sistema ? 'row-bajado' : 'row-pendiente'}">
+    <tr class="${g.bajado_sistema ? 'row-bajado' : 'row-pendiente'}" ${g._offline ? 'style="opacity:0.75;border-left:3px solid #f59e0b"' : ''}>`
       <td><code style="font-size:.9rem;font-weight:700">${g.numero_guia}</code></td>
       <td>${typeBadge(g.tipo)}</td>
       <td style="color:var(--success);font-weight:700">${formatCOP(g.monto)}</td>
@@ -432,19 +486,35 @@ async function createGuideInline() {
     toast('Completa todos los campos','warning'); return; 
   }
   
-  const { error } = await supabase.from('guias').insert([{
-    numero_guia, monto, metodo_pago, tipo, status: 'en_oficina', pagos_mixtos
-  }]);
+  const guiaPayload = { numero_guia, monto, metodo_pago, tipo, status: 'en_oficina', pagos_mixtos };
+  const { error } = await supabase.from('guias').insert([guiaPayload]);
   
-  if (error) { toast('Error al crear guía: ' + error.message, 'error'); return; }
-  
-  toast(`Guía ${numero_guia} creada`, 'success');
+  if (error) {
+    // ¿Es error de red?
+    const isNetworkError = !navigator.onLine || error.message?.toLowerCase().includes('fetch') || error.message?.toLowerCase().includes('network');
+    if (isNetworkError) {
+      // Guardar en cola offline
+      const pending = getPendingGuides();
+      const tempId = `offline_${Date.now()}`;
+      const now = new Date().toISOString();
+      pending.push({ ...guiaPayload, _tempId: tempId, _offline: true, created_at: now, fecha_registro: now });
+      savePendingGuides(pending);
+      toast(`📡 Sin conexión — guía ${numero_guia} guardada localmente`, 'warning');
+    } else {
+      toast('Error al crear guía: ' + error.message, 'error');
+      return;
+    }
+  } else {
+    toast(`Guía ${numero_guia} creada`, 'success');
+  }
+
   document.getElementById('ng-number').value = '';
   document.getElementById('ng-value').value = '';
   document.getElementById('ng-mixto-rows').innerHTML = '';
   if (metodo_pago === 'mixto') addMixtoRow();
   calculateMixtoTotal();
   document.getElementById('ng-number').focus();
+  loadGuides();
 }
 window.createGuideInline = createGuideInline;
 
