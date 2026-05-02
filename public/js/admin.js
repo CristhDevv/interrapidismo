@@ -269,7 +269,13 @@ async function loadGuides() {
   if (status) query = query.eq('status', status);
   if (type)   query = query.eq('tipo', type);
   if (date) {
-    query = query.gte('created_at', `${date}T00:00:00Z`).lt('created_at', `${date}T23:59:59Z`);
+    const nextDay = new Date(date);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const nextDateStr = nextDay.toISOString().split('T')[0];
+
+    query = query
+      .gte('created_at', `${date}T05:00:00Z`)
+      .lt('created_at', `${nextDateStr}T05:00:00Z`);
   }
   
   const { data, error } = await query;
