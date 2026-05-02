@@ -347,6 +347,8 @@ function updateBadge() {
   if (badge) badge.textContent = pending || '';
 }
 
+let editingGuideId = null;
+
 function renderGuidesTable(guides) {
   const countEl = document.getElementById('guides-count');
   if (countEl) countEl.textContent = guides.length;
@@ -356,29 +358,34 @@ function renderGuidesTable(guides) {
     tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📦</div><p>No hay guías</p></div></td></tr>`;
     return;
   }
-  tbody.innerHTML = guides.map(g => `
+  tbody.innerHTML = guides.map(g => {
+    const isEditing = g.id === editingGuideId;
+    return `
     <tr class="${g.bajado_sistema ? 'row-bajado' : 'row-pendiente'}" ${g._offline ? 'style="opacity:0.75;border-left:3px solid #f59e0b"' : ''}>
       <td><code style="font-size:.9rem;font-weight:700">${g.numero_guia}</code></td>
       <td>${typeBadge(g.tipo)}</td>
       <td>
-        <input type="number" class="inline-input" style="width:100px;padding:0.2rem;font-weight:700;color:var(--success)" 
-          value="${g.monto}" 
-          onchange="updateGuideField('${g.id}', 'monto', this.value)">
+        ${isEditing 
+          ? `<input type="number" id="edit-monto-${g.id}" class="inline-input" style="width:100px;padding:0.2rem;font-weight:700;color:var(--success)" value="${g.monto}">`
+          : `<span style="color:var(--success);font-weight:700">${formatCOP(g.monto)}</span>`
+        }
       </td>
       <td>
-        <select class="inline-input" style="padding:0.2rem;font-size:0.82rem"
-          onchange="updateGuideField('${g.id}', 'metodo_pago', this.value)">
-          <option value="nequi" ${g.metodo_pago==='nequi'?'selected':''}>Nequi</option>
-          <option value="efectivo" ${g.metodo_pago==='efectivo'?'selected':''}>Efectivo</option>
-          <option value="pago_directo" ${g.metodo_pago==='pago_directo'?'selected':''}>Directo</option>
-          <option value="mixto" ${g.metodo_pago==='mixto'?'selected':''}>Mixto</option>
-        </select>
+        ${isEditing
+          ? `<select id="edit-metodo-${g.id}" class="inline-input" style="padding:0.2rem;font-size:0.82rem">
+              <option value="nequi" ${g.metodo_pago==='nequi'?'selected':''}>Nequi</option>
+              <option value="efectivo" ${g.metodo_pago==='efectivo'?'selected':''}>Efectivo</option>
+              <option value="pago_directo" ${g.metodo_pago==='pago_directo'?'selected':''}>Directo</option>
+              <option value="mixto" ${g.metodo_pago==='mixto'?'selected':''}>Mixto</option>
+             </select>`
+          : payBadge(g.metodo_pago)
+        }
       </td>
       <td>
-        <input type="text" class="inline-input" style="width:150px;padding:0.2rem;font-size:0.82rem" 
-          placeholder="Observación..." 
-          value="${g.observaciones || ''}" 
-          onchange="updateGuideField('${g.id}', 'observaciones', this.value)">
+        ${isEditing
+          ? `<input type="text" id="edit-obs-${g.id}" class="inline-input" style="width:150px;padding:0.2rem;font-size:0.82rem" placeholder="Observación..." value="${g.observaciones || ''}">`
+          : (g.observaciones || '<span class="text-muted">—</span>')
+        }
       </td>
       <td>${statusBadge(g.status)}</td>
       <td>${g.domiciliarios?.nombre ? `🛵 ${g.domiciliarios.nombre}` : '<span class="text-muted">—</span>'}</td>
@@ -392,10 +399,16 @@ function renderGuidesTable(guides) {
       </td>
       <td>
         <div style="display:flex;gap:.3rem">
-          ${g.status !== 'entregado' ? `<button class="btn btn-sm btn-danger" onclick="deleteGuide('${g.id}','${g.numero_guia}')">🗑️</button>` : ''}
+          ${isEditing
+            ? `<button class="btn btn-sm btn-success" onclick="saveGuideRow('${g.id}')">💾</button>
+               <button class="btn btn-sm btn-secondary" onclick="cancelEditGuideRow()">❌</button>`
+            : `<button class="btn btn-sm btn-secondary" onclick="editGuideRow('${g.id}')" title="Editar fila">✏️</button>
+               ${g.status !== 'entregado' ? `<button class="btn btn-sm btn-danger" onclick="deleteGuide('${g.id}','${g.numero_guia}')" title="Eliminar">🗑️</button>` : ''}`
+          }
         </div>
       </td>
-    </tr>`).join('');
+    </tr>`
+  }).join('');
 }
 
 function clearGuideFilters() {
@@ -548,13 +561,33 @@ async function deleteGuide(id, num) {
 }
 window.deleteGuide = deleteGuide;
 
-async function updateGuideField(id, field, value) {
-  if (field === 'monto') value = parseFloat(value);
-  const { error } = await supabase.from('guias').update({ [field]: value }).eq('id', id);
-  if (error) toast('Error al actualizar: ' + error.message, 'error');
-  else toast('Actualizado ✅', 'success');
+function editGuideRow(id) {
+  editingGuideId = id;
+  renderGuidesTable(guidesCache);
 }
-window.updateGuideField = updateGuideField;
+window.editGuideRow = editGuideRow;
+
+function cancelEditGuideRow() {
+  editingGuideId = null;
+  renderGuidesTable(guidesCache);
+}
+window.cancelEditGuideRow = cancelEditGuideRow;
+
+async function saveGuideRow(id) {
+  const monto = parseFloat(document.getElementById(`edit-monto-${id}`).value) || 0;
+  const metodo_pago = document.getElementById(`edit-metodo-${id}`).value;
+  const observaciones = document.getElementById(`edit-obs-${id}`).value;
+
+  const { error } = await supabase.from('guias').update({ monto, metodo_pago, observaciones }).eq('id', id);
+  if (error) {
+    toast('Error al guardar: ' + error.message, 'error');
+  } else {
+    toast('Fila guardada ✅', 'success');
+    editingGuideId = null;
+    loadGuides(); // Refrescar los datos actualizados desde la base
+  }
+}
+window.saveGuideRow = saveGuideRow;
 
 // ── Assign ────────────────────────────────────────────────
 async function loadAssignGuides() {
