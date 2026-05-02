@@ -186,9 +186,12 @@
                   </td>
                   <td>
                     <input type="number" id="ng-value" class="inline-input" placeholder="Valor $" min="0" onkeydown="if(event.key==='Enter') createGuideInline()">
-                    <div id="ng-mixto-inputs" style="display: none; gap: 0.5rem; flex-direction: column;">
-                      <input type="number" id="ng-value-efectivo" class="inline-input" placeholder="Efectivo $" min="0">
-                      <input type="number" id="ng-value-nequi" class="inline-input" placeholder="Nequi $" min="0">
+                    <div id="ng-mixto-container" style="display: none; flex-direction: column; gap: 0.5rem;">
+                      <div id="ng-mixto-rows" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+                      <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <button class="btn btn-sm btn-secondary" onclick="addMixtoRow()" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">+ Agregar</button>
+                        <span style="font-weight: 700; font-size: 0.8rem; color: var(--primary);">Total: $<span id="ng-mixto-total">0</span></span>
+                      </div>
                     </div>
                   </td>
                   <td>

@@ -340,16 +340,61 @@ window.setInlineGroup = setInlineGroup;
 
 function toggleMixtoInputs(method) {
   const normalInput = document.getElementById('ng-value');
-  const mixtoInputs = document.getElementById('ng-mixto-inputs');
+  const mixtoContainer = document.getElementById('ng-mixto-container');
   if (method === 'mixto') {
     normalInput.style.display = 'none';
-    mixtoInputs.style.display = 'flex';
+    mixtoContainer.style.display = 'flex';
+    if (document.getElementById('ng-mixto-rows').children.length === 0) {
+      addMixtoRow();
+    }
   } else {
     normalInput.style.display = 'block';
-    mixtoInputs.style.display = 'none';
+    mixtoContainer.style.display = 'none';
   }
 }
 window.toggleMixtoInputs = toggleMixtoInputs;
+
+function addMixtoRow() {
+  const rowsContainer = document.getElementById('ng-mixto-rows');
+  const row = document.createElement('div');
+  row.style.display = 'flex';
+  row.style.gap = '0.4rem';
+  row.className = 'mixto-row';
+  row.innerHTML = `
+    <select class="mixto-method w-100" style="padding:0.3rem;" onchange="calculateMixtoTotal()">
+      <option value="efectivo">Efectivo</option>
+      <option value="nequi">Nequi</option>
+      <option value="bancolombia">Bancolombia</option>
+      <option value="daviplata">Daviplata</option>
+      <option value="otros">Otros</option>
+    </select>
+    <input type="number" class="mixto-monto inline-input" placeholder="Valor $" min="0" oninput="calculateMixtoTotal()" style="width: 80px;">
+    <button class="btn btn-sm btn-danger" onclick="removeMixtoRow(this)">×</button>
+  `;
+  rowsContainer.appendChild(row);
+}
+window.addMixtoRow = addMixtoRow;
+
+function removeMixtoRow(btn) {
+  const rowsContainer = document.getElementById('ng-mixto-rows');
+  if (rowsContainer.children.length > 1) {
+    btn.parentElement.remove();
+    calculateMixtoTotal();
+  } else {
+    toast('Debe haber al menos un método de pago', 'warning');
+  }
+}
+window.removeMixtoRow = removeMixtoRow;
+
+function calculateMixtoTotal() {
+  let total = 0;
+  document.querySelectorAll('.mixto-monto').forEach(input => {
+    total += parseFloat(input.value) || 0;
+  });
+  document.getElementById('ng-mixto-total').textContent = new Intl.NumberFormat('es-CO').format(total);
+  return total;
+}
+window.calculateMixtoTotal = calculateMixtoTotal;
 
 function getInlineGroupValue(groupId) {
   const activeBtn = document.querySelector(`#${groupId} button.active`);
@@ -362,13 +407,17 @@ async function createGuideInline() {
   const tipo          = getInlineGroupValue('ng-type-group');
   
   let monto = 0;
-  let monto_efectivo = 0;
-  let monto_nequi = 0;
+  let pagos_mixtos = [];
 
   if (metodo_pago === 'mixto') {
-    monto_efectivo = parseFloat(document.getElementById('ng-value-efectivo')?.value) || 0;
-    monto_nequi = parseFloat(document.getElementById('ng-value-nequi')?.value) || 0;
-    monto = monto_efectivo + monto_nequi;
+    document.querySelectorAll('.mixto-row').forEach(row => {
+      const met = row.querySelector('.mixto-method').value;
+      const val = parseFloat(row.querySelector('.mixto-monto').value) || 0;
+      if (val > 0) {
+        pagos_mixtos.push({ metodo: met, monto: val });
+      }
+    });
+    monto = calculateMixtoTotal();
   } else {
     monto = parseFloat(document.getElementById('ng-value').value);
   }
@@ -378,7 +427,7 @@ async function createGuideInline() {
   }
   
   const { error } = await supabase.from('guias').insert([{
-    numero_guia, monto, metodo_pago, tipo, status: 'en_oficina', monto_efectivo, monto_nequi
+    numero_guia, monto, metodo_pago, tipo, status: 'en_oficina', pagos_mixtos
   }]);
   
   if (error) { toast('Error al crear guía: ' + error.message, 'error'); return; }
@@ -386,8 +435,9 @@ async function createGuideInline() {
   toast(`Guía ${numero_guia} creada`, 'success');
   document.getElementById('ng-number').value = '';
   document.getElementById('ng-value').value = '';
-  if (document.getElementById('ng-value-efectivo')) document.getElementById('ng-value-efectivo').value = '';
-  if (document.getElementById('ng-value-nequi')) document.getElementById('ng-value-nequi').value = '';
+  document.getElementById('ng-mixto-rows').innerHTML = '';
+  if (metodo_pago === 'mixto') addMixtoRow();
+  calculateMixtoTotal();
   document.getElementById('ng-number').focus();
 }
 window.createGuideInline = createGuideInline;
@@ -865,8 +915,8 @@ function exportarExcel() {
   if (!guidesCache.length) { toast('No hay datos para exportar','warning'); return; }
   const data = guidesCache.map(g => {
     let pagoDisplay = g.metodo_pago;
-    if (g.metodo_pago === 'mixto') {
-      pagoDisplay = `Efectivo: $${g.monto_efectivo || 0} / Nequi: $${g.monto_nequi || 0}`;
+    if (g.metodo_pago === 'mixto' && g.pagos_mixtos && g.pagos_mixtos.length > 0) {
+      pagoDisplay = g.pagos_mixtos.map(p => `${p.metodo}: $${p.monto}`).join(' / ');
     }
     return {
       'Número Guía': g.numero_guia, 'Tipo': g.tipo, 'Valor': g.monto, 'Método Pago': pagoDisplay,
@@ -899,8 +949,8 @@ async function exportarPDF() {
   
   const tableData = guidesCache.map(g => {
     let pagoDisplay = g.metodo_pago.toUpperCase();
-    if (g.metodo_pago === 'mixto') {
-      pagoDisplay = `EFECTIVO: $${g.monto_efectivo || 0} / NEQUI: $${g.monto_nequi || 0}`;
+    if (g.metodo_pago === 'mixto' && g.pagos_mixtos && g.pagos_mixtos.length > 0) {
+      pagoDisplay = g.pagos_mixtos.map(p => `${p.metodo.toUpperCase()}: $${p.monto}`).join(' / ');
     }
     return [
       g.numero_guia,
@@ -1006,14 +1056,14 @@ async function loadCajaSection() {
 
   // Guías admin (domiciliario_id null) — todas cuentan para KPIs
   const { data: guiasAdmin } = await supabase.from('guias')
-      .select('monto, metodo_pago, monto_efectivo, monto_nequi')
+      .select('monto, metodo_pago, pagos_mixtos')
       .is('domiciliario_id', null)
       .gte('created_at', `${cajaDate}T00:00:00Z`)
       .lt('created_at', `${cajaDate}T23:59:59Z`);
 
   // Guías mensajero (domiciliario_id not null, entregado=true)
   const { data: guiasMensajero } = await supabase.from('guias')
-      .select('monto, metodo_pago, monto_efectivo, monto_nequi')
+      .select('monto, metodo_pago, pagos_mixtos')
       .not('domiciliario_id', 'is', null)
       .eq('entregado', true)
       .gte('created_at', `${cajaDate}T00:00:00Z`)
@@ -1037,9 +1087,12 @@ async function loadCajaSection() {
       if (g.metodo_pago === 'efectivo') efeAdmin += v;
       else if (g.metodo_pago === 'nequi') tNeq += v;
       else if (g.metodo_pago === 'pago_directo') tDir += v;
-      else if (g.metodo_pago === 'mixto') {
-        efeAdmin += parseFloat(g.monto_efectivo) || 0;
-        tNeq += parseFloat(g.monto_nequi) || 0;
+      else if (g.metodo_pago === 'mixto' && g.pagos_mixtos) {
+        g.pagos_mixtos.forEach(p => {
+          const pm = parseFloat(p.monto) || 0;
+          if (p.metodo === 'efectivo') efeAdmin += pm;
+          else tNeq += pm;
+        });
       }
   });
 
@@ -1048,9 +1101,12 @@ async function loadCajaSection() {
       if (g.metodo_pago === 'efectivo') efeMensajero += v;
       else if (g.metodo_pago === 'nequi') tNeq += v;
       else if (g.metodo_pago === 'pago_directo') tDir += v;
-      else if (g.metodo_pago === 'mixto') {
-        efeMensajero += parseFloat(g.monto_efectivo) || 0;
-        tNeq += parseFloat(g.monto_nequi) || 0;
+      else if (g.metodo_pago === 'mixto' && g.pagos_mixtos) {
+        g.pagos_mixtos.forEach(p => {
+          const pm = parseFloat(p.monto) || 0;
+          if (p.metodo === 'efectivo') efeMensajero += pm;
+          else tNeq += pm;
+        });
       }
   });
 
@@ -1283,7 +1339,7 @@ async function cerrarRuta(domiciliarioId, domNombre) {
 
   const guiaIds = (routes || []).map(r => r.guia_id);
   const { data: guias } = guiaIds.length
-    ? await supabase.from('guias').select('monto, metodo_pago, entregado').in('id', guiaIds)
+    ? await supabase.from('guias').select('monto, metodo_pago, entregado, pagos_mixtos').in('id', guiaIds)
     : { data: [] };
 
   // 2. Calcular totales
@@ -1295,6 +1351,13 @@ async function cerrarRuta(domiciliarioId, domNombre) {
     if (g.metodo_pago === 'efectivo') tEfe += v;
     else if (g.metodo_pago === 'nequi') tNeq += v;
     else if (g.metodo_pago === 'pago_directo') tDir += v;
+    else if (g.metodo_pago === 'mixto' && g.pagos_mixtos) {
+      g.pagos_mixtos.forEach(p => {
+        const pm = parseFloat(p.monto) || 0;
+        if (p.metodo === 'efectivo') tEfe += pm;
+        else tNeq += pm;
+      });
+    }
   });
 
   const base = parseFloat(bases?.[0]?.base_amount) || 0;
