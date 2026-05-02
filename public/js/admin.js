@@ -311,10 +311,9 @@ async function loadGuides() {
     nextDay.setDate(nextDay.getDate() + 1);
     const nextDateStr = nextDay.toLocaleDateString('sv-SE');
 
-    query = query.or(
-      `and(created_at.gte.${date}T05:00:00Z,created_at.lt.${nextDateStr}T05:00:00Z),` +
-      `and(fecha_entrega.gte.${date}T05:00:00Z,fecha_entrega.lt.${nextDateStr}T05:00:00Z)`
-    );
+    query = query
+      .gte('created_at', `${date}T05:00:00Z`)
+      .lt('created_at', `${nextDateStr}T05:00:00Z`);
   }
   
   const { data, error } = await query;
