@@ -357,7 +357,7 @@ function renderGuidesTable(guides) {
     return;
   }
   tbody.innerHTML = guides.map(g => `
-    <tr class="${g.bajado_sistema ? 'row-bajado' : 'row-pendiente'}" ${g._offline ? 'style="opacity:0.75;border-left:3px solid #f59e0b"' : ''}>`
+    <tr class="${g.bajado_sistema ? 'row-bajado' : 'row-pendiente'}" ${g._offline ? 'style="opacity:0.75;border-left:3px solid #f59e0b"' : ''}>
       <td><code style="font-size:.9rem;font-weight:700">${g.numero_guia}</code></td>
       <td>${typeBadge(g.tipo)}</td>
       <td style="color:var(--success);font-weight:700">${formatCOP(g.monto)}</td>
