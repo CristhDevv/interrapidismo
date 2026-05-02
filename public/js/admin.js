@@ -353,15 +353,33 @@ function renderGuidesTable(guides) {
   const tbody = document.getElementById('guides-tbody');
   if (!tbody) return;
   if (!guides.length) {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📦</div><p>No hay guías</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📦</div><p>No hay guías</p></div></td></tr>`;
     return;
   }
   tbody.innerHTML = guides.map(g => `
     <tr class="${g.bajado_sistema ? 'row-bajado' : 'row-pendiente'}" ${g._offline ? 'style="opacity:0.75;border-left:3px solid #f59e0b"' : ''}>
       <td><code style="font-size:.9rem;font-weight:700">${g.numero_guia}</code></td>
       <td>${typeBadge(g.tipo)}</td>
-      <td style="color:var(--success);font-weight:700">${formatCOP(g.monto)}</td>
-      <td>${payBadge(g.metodo_pago)}</td>
+      <td>
+        <input type="number" class="inline-input" style="width:100px;padding:0.2rem;font-weight:700;color:var(--success)" 
+          value="${g.monto}" 
+          onchange="updateGuideField('${g.id}', 'monto', this.value)">
+      </td>
+      <td>
+        <select class="inline-input" style="padding:0.2rem;font-size:0.82rem"
+          onchange="updateGuideField('${g.id}', 'metodo_pago', this.value)">
+          <option value="nequi" ${g.metodo_pago==='nequi'?'selected':''}>Nequi</option>
+          <option value="efectivo" ${g.metodo_pago==='efectivo'?'selected':''}>Efectivo</option>
+          <option value="pago_directo" ${g.metodo_pago==='pago_directo'?'selected':''}>Directo</option>
+          <option value="mixto" ${g.metodo_pago==='mixto'?'selected':''}>Mixto</option>
+        </select>
+      </td>
+      <td>
+        <input type="text" class="inline-input" style="width:150px;padding:0.2rem;font-size:0.82rem" 
+          placeholder="Observación..." 
+          value="${g.observaciones || ''}" 
+          onchange="updateGuideField('${g.id}', 'observaciones', this.value)">
+      </td>
       <td>${statusBadge(g.status)}</td>
       <td>${g.domiciliarios?.nombre ? `🛵 ${g.domiciliarios.nombre}` : '<span class="text-muted">—</span>'}</td>
       <td>
@@ -529,6 +547,14 @@ async function deleteGuide(id, num) {
   toast(`Guía ${num} eliminada`,'info');
 }
 window.deleteGuide = deleteGuide;
+
+async function updateGuideField(id, field, value) {
+  if (field === 'monto') value = parseFloat(value);
+  const { error } = await supabase.from('guias').update({ [field]: value }).eq('id', id);
+  if (error) toast('Error al actualizar: ' + error.message, 'error');
+  else toast('Actualizado ✅', 'success');
+}
+window.updateGuideField = updateGuideField;
 
 // ── Assign ────────────────────────────────────────────────
 async function loadAssignGuides() {
