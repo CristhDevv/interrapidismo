@@ -591,7 +591,7 @@ function renderScannedGuides() {
   tbody.innerHTML = scannedGuides.map((g, idx) => `
     <tr>
       <td class="text-muted" style="font-size:0.8rem">${idx + 1}</td>
-      <td><code style="font-weight:700">${g.numero_guia}</code></td>
+      <td><input type="text" class="inline-input" style="width:130px; padding:0.2rem; font-weight:700" value="${g.numero_guia}" onchange="updateScannedGuideNumber('${g.numero_guia}', this.value)"></td>
       <td>
         <input type="number" class="inline-input" style="width:80px; padding:0.2rem" value="${g.monto}" onchange="updateScannedGuideValue('${g.numero_guia}', this.value)">
       </td>
@@ -612,6 +612,17 @@ function updateScannedGuideValue(num, newVal) {
   }
 }
 window.updateScannedGuideValue = updateScannedGuideValue;
+
+function updateScannedGuideNumber(oldNumero, newNumero) {
+  newNumero = newNumero.trim();
+  if (!newNumero) return;
+  const g = scannedGuides.find(x => x.numero_guia === oldNumero);
+  if (g) {
+    g.numero_guia = newNumero;
+    saveScannedGuides(); // Utilizando la función existente de guardado
+  }
+}
+window.updateScannedGuideNumber = updateScannedGuideNumber;
 
 function removeScannedGuide(num) {
   scannedGuides = scannedGuides.filter(g => g.numero_guia !== num);
