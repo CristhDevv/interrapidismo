@@ -307,13 +307,22 @@ async function loadGuides() {
   if (status) query = query.eq('status', status);
   if (type)   query = query.eq('tipo', type);
   if (date) {
-    const nextDay = new Date(date);
-    nextDay.setDate(nextDay.getDate() + 1);
+    const [y, m, d] = date.split('-').map(Number);
+    const nextDay = new Date(y, m - 1, d + 1);
     const nextDateStr = nextDay.toLocaleDateString('sv-SE');
 
-    query = query
-      .gte('created_at', `${date}T05:00:00Z`)
-      .lt('created_at', `${nextDateStr}T05:00:00Z`);
+    const isToday = date === new Date().toLocaleDateString('sv-SE');
+
+    if (isToday) {
+      query = query
+        .gte('created_at', `${date}T05:00:00Z`)
+        .lt('created_at', `${nextDateStr}T05:00:00Z`);
+    } else {
+      query = query.or(
+        `and(created_at.gte.${date}T05:00:00Z,created_at.lt.${nextDateStr}T05:00:00Z),` +
+        `and(fecha_entrega.gte.${date}T05:00:00Z,fecha_entrega.lt.${nextDateStr}T05:00:00Z)`
+      );
+    }
   }
   
   const { data, error } = await query;
