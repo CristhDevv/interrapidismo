@@ -258,7 +258,7 @@ window.showSection = showSection;
 
 // ── Dashboard ─────────────────────────────────────────────
 async function loadDashboard() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toLocaleDateString('sv-SE');
   const { data: guides, error } = await supabase
     .from('guias')
     .select('*, domiciliarios(nombre)')
@@ -300,7 +300,7 @@ async function loadGuides() {
   let date     = document.getElementById('filter-date')?.value   || '';
   
   if (!date) {
-    date = new Date().toISOString().split('T')[0];
+    date = new Date().toLocaleDateString('sv-SE');
   }
   
   let query = supabase.from('guias').select('*, domiciliarios(nombre)').order('created_at', { ascending: false });
@@ -813,7 +813,7 @@ window.doAssign = doAssign;
 
 // ── Live Monitor ──────────────────────────────────────────
 async function fetchLiveMonitor(containerId = 'live-couriers-list') {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toLocaleDateString('sv-SE');
   
   const { data: doms } = await supabase.from('domiciliarios').select('*').eq('activo', true);
   if (!doms) return;
@@ -1192,7 +1192,7 @@ function exportarExcel() {
   const worksheet = XLSX.utils.json_to_sheet(data);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Guías");
-  XLSX.writeFile(workbook, `Guias_${new Date().toISOString().split('T')[0]}.xlsx`);
+  XLSX.writeFile(workbook, `Guias_${new Date().toLocaleDateString('sv-SE')}.xlsx`);
   toast('Archivo Excel generado', 'success');
 }
 window.exportarExcel = exportarExcel;
@@ -1237,18 +1237,18 @@ async function exportarPDF() {
     margin: { top: 35 }
   });
   
-  doc.save(`Guias_${new Date().toISOString().split('T')[0]}.pdf`);
+  doc.save(`Guias_${new Date().toLocaleDateString('sv-SE')}.pdf`);
   toast('Archivo PDF generado', 'success');
 }
 window.exportarPDF = exportarPDF;
 
 // ── Caja ────────────────────────────────────────────────
 async function checkCaja() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toLocaleDateString('sv-SE');
   const { data, error } = await supabase.from('caja')
     .select('*')
     .eq('estado', 'abierta')
-    .gte('fecha_apertura', `${today}T00:00:00Z`)
+    .gte('fecha_apertura', `${today}T05:00:00Z`)
     .order('fecha_apertura', { ascending: false })
     .limit(1);
     
@@ -1337,7 +1337,7 @@ async function loadCajaSection() {
   const todasGuias = [...(guiasAdmin || []), ...(guiasMensajero || [])];
 
   // Base de mensajeros del día
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toLocaleDateString('sv-SE');
   const { data: bases } = await supabase.from('courier_bases')
       .select('base_amount')
       .eq('fecha', today);
@@ -1590,7 +1590,7 @@ async function cerrarRuta(domiciliarioId, domNombre) {
   const confirmar = confirm(`¿Cerrar la ruta de ${domNombre}?\n\nEsto archivará la jornada y permitirá asignar una nueva ruta.`);
   if (!confirmar) return;
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toLocaleDateString('sv-SE');
 
   // 1. Obtener datos de la sesión actual
   const { data: routes } = await supabase.from('daily_routes')
