@@ -92,13 +92,32 @@ function statusBadge(s) {
   return m[s] || s;
 }
 
-function payBadge(p) {
+function payBadge(p, mixtos = []) {
   const m = {
     nequi:        `<span class="badge badge-nequi">Nequi</span>`,
     efectivo:     `<span class="badge badge-efectivo">💵 Efectivo</span>`,
     pago_directo: `<span class="badge badge-pago-directo">🏦 Pago directo</span>`,
+    bancolombia:  `<span class="badge" style="background:#00448d;color:white">Bancolombia</span>`,
+    daviplata:   `<span class="badge" style="background:#e30613;color:white">Daviplata</span>`,
+    otros:        `<span class="badge badge-secondary">Otros</span>`
   };
-  return m[p] || p;
+
+  if (p === 'mixto' && mixtos && mixtos.length > 0) {
+    const details = mixtos.map(mx => `
+      <div style="display:flex; justify-content:space-between; gap:0.5rem; font-size:0.75rem; margin-top:2px;">
+        <span style="font-weight:600; text-transform:capitalize;">${mx.metodo}:</span>
+        <span style="color:var(--success)">${formatCOP(mx.monto)}</span>
+      </div>
+    `).join('');
+    return `
+      <div style="display:flex; flex-direction:column; min-width:120px;">
+        <span class="badge" style="background: linear-gradient(45deg, #FF6B00, #FF0055); color:white; margin-bottom:4px; text-align:center;">⚖️ Mixto</span>
+        ${details}
+      </div>
+    `;
+  }
+
+  return m[p] || `<span class="badge badge-secondary">${p}</span>`;
 }
 
 function typeBadge(t) {
@@ -284,7 +303,7 @@ async function loadDashboard() {
           <td><code>${r.numero_guia}</code></td>
           <td>${r.domiciliarios?.nombre || 'Desconocido'}</td>
           <td style="color:var(--success)">${formatCOP(r.monto)}</td>
-          <td>${payBadge(r.metodo_pago)}</td>
+          <td>${payBadge(r.metodo_pago, r.pagos_mixtos)}</td>
           <td class="text-muted text-sm">${formatDate(r.fecha_entrega)}</td>
         </tr>`).join('')
       : `<tr><td colspan="5" class="text-center text-muted">Sin entregas hoy</td></tr>`;
@@ -400,7 +419,7 @@ function renderGuidesTable(guides) {
               <option value="pago_directo" ${g.metodo_pago==='pago_directo'?'selected':''}>Directo</option>
               <option value="mixto" ${g.metodo_pago==='mixto'?'selected':''}>Mixto</option>
              </select>`
-          : payBadge(g.metodo_pago)
+          : payBadge(g.metodo_pago, g.pagos_mixtos)
         }
       </td>
       <td>
@@ -839,6 +858,13 @@ async function fetchLiveMonitor(containerId = 'live-couriers-list') {
         if (g.metodo_pago === 'efectivo') efectivo += g.monto;
         else if (g.metodo_pago === 'nequi') nequi += g.monto;
         else if (g.metodo_pago === 'pago_directo') pago_directo += g.monto;
+        else if (g.metodo_pago === 'mixto' && g.pagos_mixtos) {
+          g.pagos_mixtos.forEach(p => {
+            const pm = parseFloat(p.monto) || 0;
+            if (p.metodo === 'efectivo') efectivo += pm;
+            else nequi += pm; // Assume Nequi for anything not cash in mixed? Or maybe handle others.
+          });
+        }
       } else {
         pendientes++;
       }
@@ -881,12 +907,7 @@ function renderLiveMonitor(summaries, containerId = 'live-couriers-list') {
         <td style="padding:14px 20px;font-size:14px;font-family:monospace;font-weight:700;color:#374151;border-bottom:1px solid #F3F4F6">${g.numero_guia}</td>
         <td style="padding:14px 20px;font-size:15px;font-weight:800;color:#1A1A1A;border-bottom:1px solid #F3F4F6">${formatCOP(g.monto)}</td>
         <td style="padding:14px 20px;border-bottom:1px solid #F3F4F6">
-          ${g.metodo_pago === 'nequi'
-            ? '<span style="background:#2C0A5E;color:white;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.5px">Nequi</span>'
-            : g.metodo_pago === 'pago_directo'
-            ? '<span style="background:#1e40af;color:white;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.5px">Pago Directo</span>'
-            : '<span style="background:#166534;color:white;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.5px">Efectivo</span>'
-          }
+          ${payBadge(g.metodo_pago, g.pagos_mixtos)}
         </td>
         <td style="padding:14px 20px;border-bottom:1px solid #F3F4F6">
           ${g.entregado
@@ -1043,7 +1064,7 @@ async function loadHistory() {
           <td><code>${r.numero_guia}</code></td>
           <td>${typeBadge(r.tipo)}</td>
           <td style="color:var(--success)">${formatCOP(r.monto)}</td>
-          <td>${payBadge(r.metodo_pago)}</td>
+          <td>${payBadge(r.metodo_pago, r.pagos_mixtos)}</td>
           <td>🛵 ${r.domiciliarios?.nombre}</td>
           <td class="text-sm">${formatDate(r.fecha_entrega)}</td>
           <td class="text-sm">
