@@ -548,7 +548,7 @@ async function createGuideInline() {
   let pagos_mixtos = [];
 
   if (metodo_pago === 'mixto') {
-    document.querySelectorAll('.mixto-row').forEach(row => {
+    document.querySelectorAll('#ng-mixto-rows .mixto-row').forEach(row => {
       const met = row.querySelector('.mixto-method').value;
       const val = parseFloat(row.querySelector('.mixto-monto').value) || 0;
       if (val > 0) {
