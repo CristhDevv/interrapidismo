@@ -417,39 +417,12 @@ function renderGuidesTable(guides) {
       </td>
       <td>
         ${isEditing
-          ? `<div>
-              <select id="edit-metodo-${g.id}" class="inline-input" style="padding:0.2rem;font-size:0.82rem" onchange="toggleEditMixto('${g.id}', this.value)">
-                <option value="nequi" ${g.metodo_pago==='nequi'?'selected':''}>Nequi</option>
-                <option value="efectivo" ${g.metodo_pago==='efectivo'?'selected':''}>Efectivo</option>
-                <option value="pago_directo" ${g.metodo_pago==='pago_directo'?'selected':''}>Directo</option>
-                <option value="mixto" ${g.metodo_pago==='mixto'?'selected':''}>Mixto</option>
-              </select>
-              <div id="edit-mixto-container-${g.id}" style="display: ${g.metodo_pago==='mixto'?'flex':'none'}; flex-direction: column; gap: 0.3rem; margin-top: 0.5rem;">
-                <div id="edit-mixto-rows-${g.id}" class="edit-mixto-rows">
-                  ${(g.pagos_mixtos || []).map(pm => `
-                    <div class="mixto-row" style="display:flex; gap:0.2rem; margin-bottom:2px;">
-                      <select class="mixto-method" style="font-size:0.7rem; padding:2px;">
-                        <option value="efectivo" ${pm.metodo==='efectivo'?'selected':''}>Efe.</option>
-                        <option value="nequi" ${pm.metodo==='nequi'?'selected':''}>Neq.</option>
-                        <option value="bancolombia" ${pm.metodo==='bancolombia'?'selected':''}>Ban.</option>
-                        <option value="daviplata" ${pm.metodo==='daviplata'?'selected':''}>Dav.</option>
-                      </select>
-                      <input type="number" class="mixto-monto inline-input" value="${pm.monto}" style="width:50px; font-size:0.7rem; padding:2px;" oninput="updateEditTotal('${g.id}')">
-                      <button style="border:none; background:none; color:red; cursor:pointer;" onclick="this.parentElement.remove(); updateEditTotal('${g.id}')">×</button>
-                    </div>
-                  `).join('') || `
-                    <div class="mixto-row" style="display:flex; gap:0.2rem; margin-bottom:2px;">
-                      <select class="mixto-method" style="font-size:0.7rem; padding:2px;">
-                        <option value="efectivo">Efe.</option>
-                        <option value="nequi">Neq.</option>
-                      </select>
-                      <input type="number" class="mixto-monto inline-input" value="${g.monto}" style="width:50px; font-size:0.7rem; padding:2px;" oninput="updateEditTotal('${g.id}')">
-                    </div>
-                  `}
-                </div>
-                <button class="btn btn-sm btn-secondary" style="font-size:0.65rem; padding:2px;" onclick="addEditMixtoRow('${g.id}')">+ Método</button>
-              </div>
-            </div>`
+          ? `<select id="edit-metodo-${g.id}" class="inline-input" style="padding:0.2rem;font-size:0.82rem">
+              <option value="nequi" ${g.metodo_pago==='nequi'?'selected':''}>Nequi</option>
+              <option value="efectivo" ${g.metodo_pago==='efectivo'?'selected':''}>Efectivo</option>
+              <option value="pago_directo" ${g.metodo_pago==='pago_directo'?'selected':''}>Directo</option>
+              <option value="mixto" ${g.metodo_pago==='mixto'?'selected':''}>Mixto</option>
+             </select>`
           : payBadge(g.metodo_pago, g.pagos_mixtos)
         }
       </td>
@@ -552,57 +525,13 @@ window.removeMixtoRow = removeMixtoRow;
 
 function calculateMixtoTotal() {
   let total = 0;
-  document.querySelectorAll('#ng-mixto-rows .mixto-monto').forEach(input => {
+  document.querySelectorAll('.mixto-monto').forEach(input => {
     total += parseFloat(input.value) || 0;
   });
   document.getElementById('ng-mixto-total').textContent = new Intl.NumberFormat('es-CO').format(total);
   return total;
 }
 window.calculateMixtoTotal = calculateMixtoTotal;
-
-// Helpers para edición mixto en filas
-function toggleEditMixto(id, val) {
-  const container = document.getElementById(`edit-mixto-container-${id}`);
-  const montoInput = document.getElementById(`edit-monto-${id}`);
-  if (val === 'mixto') {
-    container.style.display = 'flex';
-    montoInput.readOnly = true;
-    updateEditTotal(id);
-  } else {
-    container.style.display = 'none';
-    montoInput.readOnly = false;
-  }
-}
-window.toggleEditMixto = toggleEditMixto;
-
-function addEditMixtoRow(id) {
-  const container = document.getElementById(`edit-mixto-rows-${id}`);
-  const div = document.createElement('div');
-  div.className = 'mixto-row';
-  div.style.cssText = 'display:flex; gap:0.2rem; margin-bottom:2px;';
-  div.innerHTML = `
-    <select class="mixto-method" style="font-size:0.7rem; padding:2px;">
-      <option value="efectivo">Efe.</option>
-      <option value="nequi">Neq.</option>
-      <option value="bancolombia">Ban.</option>
-      <option value="daviplata">Dav.</option>
-    </select>
-    <input type="number" class="mixto-monto inline-input" placeholder="0" style="width:50px; font-size:0.7rem; padding:2px;" oninput="updateEditTotal('${id}')">
-    <button style="border:none; background:none; color:red; cursor:pointer;" onclick="this.parentElement.remove(); updateEditTotal('${id}')">×</button>
-  `;
-  container.appendChild(div);
-}
-window.addEditMixtoRow = addEditMixtoRow;
-
-function updateEditTotal(id) {
-  const rows = document.querySelectorAll(`#edit-mixto-rows-${id} .mixto-row`);
-  let total = 0;
-  rows.forEach(r => {
-    total += parseFloat(r.querySelector('.mixto-monto').value) || 0;
-  });
-  document.getElementById(`edit-monto-${id}`).value = total;
-}
-window.updateEditTotal = updateEditTotal;
 
 function getInlineGroupValue(groupId) {
   const activeBtn = document.querySelector(`#${groupId} button.active`);
@@ -694,23 +623,11 @@ function cancelEditGuideRow() {
 window.cancelEditGuideRow = cancelEditGuideRow;
 
 async function saveGuideRow(id) {
-  let monto = parseFloat(document.getElementById(`edit-monto-${id}`).value) || 0;
+  const monto = parseFloat(document.getElementById(`edit-monto-${id}`).value) || 0;
   const metodo_pago = document.getElementById(`edit-metodo-${id}`).value;
   const observaciones = document.getElementById(`edit-obs-${id}`).value;
-  let pagos_mixtos = [];
 
-  if (metodo_pago === 'mixto') {
-    const rows = document.querySelectorAll(`#edit-mixto-rows-${id} .mixto-row`);
-    rows.forEach(r => {
-      const met = r.querySelector('.mixto-method').value;
-      const val = parseFloat(r.querySelector('.mixto-monto').value) || 0;
-      if (val > 0) pagos_mixtos.push({ metodo: met, monto: val });
-    });
-    // Recalcular monto por si acaso
-    monto = pagos_mixtos.reduce((sum, p) => sum + p.monto, 0);
-  }
-
-  const { error } = await supabase.from('guias').update({ monto, metodo_pago, observaciones, pagos_mixtos }).eq('id', id);
+  const { error } = await supabase.from('guias').update({ monto, metodo_pago, observaciones }).eq('id', id);
   if (error) {
     toast('Error al guardar: ' + error.message, 'error');
   } else {
