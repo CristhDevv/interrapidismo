@@ -102,16 +102,18 @@ function payBadge(p, mixtos = []) {
     otros:        `<span class="badge badge-secondary">Otros</span>`
   };
 
-  if (p === 'mixto' && mixtos && mixtos.length > 0) {
-    const details = mixtos.map(mx => `
+  if (p === 'mixto') {
+    const hasDetails = mixtos && mixtos.length > 0;
+    const details = hasDetails ? mixtos.map(mx => `
       <div style="display:flex; justify-content:space-between; gap:0.5rem; font-size:0.75rem; margin-top:2px;">
-        <span style="font-weight:600; text-transform:capitalize;">${mx.metodo}:</span>
-        <span style="color:var(--success)">${formatCOP(mx.monto)}</span>
+        <span style="font-weight:600; text-transform:capitalize;">${mx.metodo || '?'}:</span>
+        <span style="color:var(--success)">${formatCOP(mx.monto || 0)}</span>
       </div>
-    `).join('');
+    `).join('') : '<div style="font-size:0.7rem; color:#999; margin-top:2px;">(Sin detalles)</div>';
+
     return `
       <div style="display:flex; flex-direction:column; min-width:120px;">
-        <span class="badge" style="background: linear-gradient(45deg, #FF6B00, #FF0055); color:white; margin-bottom:4px; text-align:center;">⚖️ Mixto</span>
+        <span class="badge" style="background: linear-gradient(45deg, #FF6B00, #FF0055); color:white; margin-bottom:4px; text-align:center; box-shadow: 0 2px 4px rgba(255,107,0,0.2);">⚖️ Mixto</span>
         ${details}
       </div>
     `;
@@ -201,12 +203,14 @@ function initApp(name) {
 let _refreshInterval = null;
 
 function initRealtime() {
+  // Limpiar canales previos para evitar el error "cannot add postgres_changes after subscribe"
+  supabase.removeAllChannels();
+
   // guías → refresh guides list + dashboard + caja KPIs instantly
   supabase.channel('public:guias')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'guias' }, payload => {
       loadGuides();
       loadDashboard();
-      // Refresh caja KPIs if section is active
       const cajaSection = document.getElementById('section-caja');
       if (cajaSection?.classList.contains('active')) loadCajaSection();
 
